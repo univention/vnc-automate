@@ -1,0 +1,5 @@
+vnc-automate (0.0.1-1) unstable; urgency=medium
+
+  * Bug #43218: Initial release
+
+ -- Alexander Kläser <klaeser@univention.de>  Mon, 19 Dec 2016 17:26:40 +0100
