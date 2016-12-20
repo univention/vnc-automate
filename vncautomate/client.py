@@ -39,6 +39,7 @@ from twisted.internet.threads import deferToThread
 from twisted.internet.task import deferLater
 from twisted.internet import reactor
 from .config import OCRConfig
+from .ocr import OCRAlgorithm
 
 
 class VNCAutomateException(ValueError):

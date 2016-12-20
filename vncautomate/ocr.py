@@ -46,6 +46,7 @@ from twisted.internet import reactor
 from twisted.internet.protocol import ProcessProtocol
 import pyximportcpp
 import segment_line
+from .config import OCRConfig
 
 pyximportcpp._pass()
 

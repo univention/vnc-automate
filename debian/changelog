@@ -1,3 +1,9 @@
+vnc-automate (0.0.1-3) unstable; urgency=medium
+
+  * Bug #43218: fix some import errors
+
+ -- Alexander Kläser <klaeser@univention.de>  Tue, 20 Dec 2016 16:50:50 +0100
+
 vnc-automate (0.0.1-2) unstable; urgency=medium
 
   * Bug #43218: added '--with python_support'
