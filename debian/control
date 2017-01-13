@@ -18,7 +18,7 @@ Depends: ${misc:Depends},
  cython (>= 0.23.2),
  python-scipy,
  python-twisted-core,
- tesseract-ocr (>= 3.04),
+ tesseract-ocr,
  tesseract-ocr-deu
 Description: A python framework for automating VNC sessions via text recognition (OCR)
  This package provides a python framework that allows to search in a VNC
