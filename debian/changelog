@@ -1,3 +1,9 @@
+vnc-automate (0.0.1-4) unstable; urgency=medium
+
+  * Bug #43218: adjust dependecy to cython
+
+ -- Alexander Kläser <klaeser@univention.de>  Fri, 13 Jan 2017 10:14:14 +0100
+
 vnc-automate (0.0.1-3) unstable; urgency=medium
 
   * Bug #43218: fix some import errors
