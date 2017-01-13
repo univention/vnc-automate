@@ -37,13 +37,13 @@ import re
 import logging
 from datetime import datetime
 import lxml.etree as ET
-from Queue import Queue
 from PIL import Image, ImageDraw
 import numpy as np
 from scipy.signal import sepfir2d
-from tempfile import mkstemp
+from tempfile import mktemp
 from twisted.internet import reactor
 from twisted.internet.protocol import ProcessProtocol
+from twisted.internet.defer import gatherResults, Deferred
 import pyximportcpp
 import segment_line
 from .config import OCRConfig
@@ -86,7 +86,6 @@ class _ReadStdinProcessProtocol(ProcessProtocol):
 	def __init__(self, callback, cmd):
 		self.callback = callback
 		self.cmd = cmd
-		self.data = ''
 		logging.debug('Running command: %s' % ' '.join(cmd))
 		reactor.spawnProcess(self, cmd[0], cmd, os.environ)
 
@@ -95,14 +94,13 @@ class _ReadStdinProcessProtocol(ProcessProtocol):
 
 	def outReceived(self, data):
 		logging.debug('Received data from tesseract: %d bytes', len(data))
-		self.data = self.data + data
 
 	def errReceived(self, data):
 		logging.debug('Ignoring received data on stderr: %s', data)
 
 	def outConnectionLost(self):
-		logging.debug('Process terminated with %d bytes of data', len(self.data))
-		self.callback(self.data)
+		logging.debug('Process terminated: %s' % self.cmd)
+		self.callback()
 
 
 class OCRAlgorithm(object):
@@ -333,7 +331,7 @@ class OCRAlgorithm(object):
 		logging.debug('Found %s words altogether', len(words))
 		return words
 
-	def ocr_img(self, _img, box, queue):
+	def ocr_img(self, _img, box):
 		if box:
 			logging.debug('Performing OCR on VNC screen in area %s and with resizing %s', box, self.config.img_resize)
 		else:
@@ -344,22 +342,39 @@ class OCRAlgorithm(object):
 		new_width = int(round(img.width * self.config.img_resize))
 		new_height = int(round(img.height * self.config.img_resize))
 		img = img.resize((new_width, new_height))
-		img_fd, img_file_path = mkstemp(suffix='.tiff')
+		img_file_path = mktemp(suffix='.tiff')
 		img.save(img_file_path)
 
-		def _process_output(stdout):
-			os.close(img_fd)
-			words = self.get_words_from_hocr(stdout)
+		# temporary file for tesseract output
+		hocr_file_path = mktemp()
+
+		processDeferred = Deferred()
+		def _process_output():
+			# read OCR output from temp file
+			hocr_file = open(hocr_file_path + '.html')
+			hocr_data = hocr_file.read()
+			logging.debug('Read %d bytes of data from tesseract output', len(hocr_data))
+
+			logging.debug('Remove temporary image and output files')
+			os.unlink(hocr_file_path + '.html')
+			os.unlink(img_file_path)
+
+			# get the recognized words
+			words = self.get_words_from_hocr(hocr_data)
 			for line in words:
 				for word in line:
 					word.resize(1.0 / self.config.img_resize)
 					if box:
 						word.offset(box[0:2])
-			queue.put(words)
-			logging.debug('Detected words: %s', '\n'.join([' '.join([iword and iword.word for iword in line]) for line in words]))
 
-		cmd = ['/usr/bin/tesseract', '-l', self.config.lang, img_file_path, 'stdout', 'hocr']
+			logging.debug('Detected words: %s', '\n'.join([' '.join([iword and iword.word for iword in line]) for line in words]))
+			processDeferred.callback(words)
+
+		cmd = ['/usr/bin/tesseract', img_file_path, hocr_file_path, '-l', self.config.lang, 'hocr']
+		logging.debug('Running: tesseract %s' % (' '.join(cmd), ))
 		_ReadStdinProcessProtocol(_process_output, cmd)
+
+		return processDeferred
 
 	def mean_point_of_boxes(self, boxes):
 		points = []
@@ -433,23 +448,29 @@ class OCRAlgorithm(object):
 		img = img.convert('L')
 		boxes = self.boxes_from_image(img)
 
-		best_match = (self.config.min_str_match_score, None)
-		ocr_queue = Queue()
+		deferreds = []
 		for box in [None] + boxes:
-			self.ocr_img(img, box, ocr_queue)
+			deferred = self.ocr_img(img, box)
+			deferred.addCallback(self.find_best_matching_words, pattern)
+			deferreds.append(deferred)
 
-		for i in range(1 + len(boxes)):
-			all_words = ocr_queue.get(timeout=20)
-			match = self.find_best_matching_words(all_words, pattern)
-			if match > best_match:
-				best_match = match
+		def _process_matches(matches):
+			best_match = (self.config.min_str_match_score, None)
+			for match in matches:
+				if match > best_match:
+					best_match = match
 
-		score, matched_words = best_match
-		logging.debug('Search pattern: %s', ' '.join(pattern))
-		if matched_words:
-			logging.debug('Matched words: %s (score=%s)', ' '.join([iword.word for iword in matched_words]), score)
-			logging.debug('Matched word objects: %s', matched_words)
-			click_point = self.mean_point_of_boxes([iword.bbox for iword in matched_words])
-			return click_point
-		logging.debug('No matches found')
-		return None
+			score, matched_words = best_match
+			logging.debug('Search pattern: %s', ' '.join(pattern))
+			if matched_words:
+				logging.debug('Matched words: %s (score=%s)', ' '.join([iword.word for iword in matched_words]), score)
+				logging.debug('Matched word objects: %s', matched_words)
+				click_point = self.mean_point_of_boxes([iword.bbox for iword in matched_words])
+				return click_point
+			logging.debug('No matches found')
+			return None
+
+		results_deferred = gatherResults(deferreds)
+		results_deferred.addCallback(_process_matches)
+		return results_deferred
+

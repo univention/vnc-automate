@@ -76,8 +76,7 @@ class VNCAutomateClient(VNCDoToolClient):
 		if start_time < 0:
 			start_time = time()
 
-		def _ocr(*args):
-			click_point = self.ocr_algo.find_text_in_image(self.screen, text)
+		def _check_timeout(click_point):
 			duration = time() - start_time
 			if click_point is not None:
 				# done, we found the text :)
@@ -94,8 +93,9 @@ class VNCAutomateClient(VNCDoToolClient):
 
 		self.framebufferUpdateRequest()
 		self.deferred = Deferred()
-		self.deferred.addCallback(lambda _img: deferLater(reactor, defer, lambda: None))
-		self.deferred.addCallback(lambda _img: deferToThread(_ocr))
+		self.deferred.addCallback(lambda _none: deferLater(reactor, defer, lambda: None))
+		self.deferred.addCallback(lambda _none: self.ocr_algo.find_text_in_image(self.screen, text))
+		self.deferred.addCallback(lambda _click_point: _check_timeout(_click_point))
 		self.deferred.addCallback(lambda result: self._find_text(text, timeout=timeout, defer=1e-2, start_time=start_time) if result is None else result)
 		return self.deferred
 

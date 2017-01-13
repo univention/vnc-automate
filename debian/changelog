@@ -1,3 +1,9 @@
+vnc-automate (0.0.1-6) unstable; urgency=medium
+
+  * Bug #43218: adjust calling of tesseract to older tesseract version
+
+ -- Alexander Kläser <klaeser@univention.de>  Fri, 13 Jan 2017 16:04:52 +0100
+
 vnc-automate (0.0.1-5) unstable; urgency=medium
 
   * Bug #43218: adjust dependency for tesseract
