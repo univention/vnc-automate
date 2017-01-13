@@ -1,6 +1,12 @@
+vnc-automate (0.0.1-5) unstable; urgency=medium
+
+  * Bug #43218: adjust dependency for tesseract
+
+ -- Alexander Kläser <klaeser@univention.de>  Fri, 13 Jan 2017 11:01:03 +0100
+
 vnc-automate (0.0.1-4) unstable; urgency=medium
 
-  * Bug #43218: adjust dependecy to cython
+  * Bug #43218: adjust dependency for cython
 
  -- Alexander Kläser <klaeser@univention.de>  Fri, 13 Jan 2017 10:14:14 +0100
 
