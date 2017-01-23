@@ -306,8 +306,7 @@ class OCRAlgorithm(object):
 	def get_words_from_hocr(self, xml_data):
 		logging.debug('Parsing words from XML OCR data')
 		xml = ET.fromstring(xml_data)
-		words = xml.xpath('//*[@class="ocrx_word"]')
-		re_bbox = re.compile('^bbox ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+);.*')
+		re_bbox = re.compile('.*bbox ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+).*')
 
 		words = []
 		for line in xml.xpath('//*[@class="ocr_line"]'):
