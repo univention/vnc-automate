@@ -1,3 +1,9 @@
+vnc-automate (0.0.1-8) unstable; urgency=medium
+
+  * Bug #43218: Ignore illegal tesseract output.
+
+ -- Richard Ulmer <ulmer@univention.de>  Tue, 24 Jan 2017 16:24:37 +0100
+
 vnc-automate (0.0.1-7) unstable; urgency=medium
 
   * Bug #43218: remove version dependency for tesseract

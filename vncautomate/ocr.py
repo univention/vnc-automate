@@ -305,7 +305,13 @@ class OCRAlgorithm(object):
 
 	def get_words_from_hocr(self, xml_data):
 		logging.debug('Parsing words from XML OCR data')
-		xml = ET.fromstring(xml_data)
+		try:
+			xml = ET.fromstring(xml_data, parser=ET.XMLParser(recover=True))
+		except ET.XMLSyntaxError as err:
+			# return an empty list of words to enable continuation
+			logging.warn('XML output from tesseract is malformed: %s' % err)
+			return []
+
 		re_bbox = re.compile('.*bbox ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+).*')
 
 		words = []
@@ -323,8 +329,11 @@ class OCRAlgorithm(object):
 					# the word might be packed into an HTML tag such as <strong>
 					word = word[0]
 
-				_word = _OCRWord(word.text, bbox)
-				words_in_line.append(_word)
+				try:
+					_word = _OCRWord(word.text, bbox)
+					words_in_line.append(_word)
+				except UnicodeDecodeError as err:
+					logging.warn('Ignoring wrongly encoded word: %s' % err)
 			words.append(words_in_line)
 
 		logging.debug('Found %s words altogether', len(words))

@@ -73,3 +73,7 @@ class OCRConfig(object):
 		for name, member in self.get_attrs():
 			if name in kwargs:
 				setattr(self, name, kwargs[name])
+
+	def __str__(self):
+		string = ', '.join(['%s=%s' % (name, getattr(self, name)) for name, member in self.get_attrs()])
+		return '{OCRConfig: %s}' % string
