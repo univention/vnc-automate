@@ -85,6 +85,7 @@ class VNCAutomateClient(VNCDoToolClient):
 			else:
 				# check timeout
 				logging.info('No match for search pattern [%.1f sec]', duration)
+				self.prevent_screen_saver()
 				if timeout > 0 and duration >= timeout:
 					raise VNCAutomateException('Search for string "%s" in VNC screen timed out after %.1f seconds!' % (text, duration))
 
@@ -98,6 +99,9 @@ class VNCAutomateClient(VNCDoToolClient):
 		self.deferred.addCallback(lambda _click_point: _check_timeout(_click_point))
 		self.deferred.addCallback(lambda result: self._find_text(text, timeout=timeout, defer=1e-2, start_time=start_time) if result is None else result)
 		return self.deferred
+
+	def prevent_screen_saver(self):
+		self.keyPress('ctrl')
 
 	def mouseMoveToText(self, text, timeout=30, defer=1e-2, log=True):
 		if log:
