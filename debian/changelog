@@ -1,3 +1,9 @@
+vnc-automate (0.0.1-11) unstable; urgency=medium
+
+  * Bug #43218: Screen saver prevention is now optional
+
+ -- Richard Ulmer <ulmer@univention.de>  Mon, 30 Jan 2017 16:13:36 +0100
+
 vnc-automate (0.0.1-10) unstable; urgency=medium
 
   * Bug #43218: Fix index out of bounds error

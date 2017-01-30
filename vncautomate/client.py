@@ -72,7 +72,7 @@ class VNCAutomateClient(VNCDoToolClient):
 		self.deferred = Deferred()
 		return self.deferred
 
-	def _find_text(self, text, timeout=-1, defer=1e-2, start_time=-1):
+	def _find_text(self, text, timeout=-1, defer=1e-2, start_time=-1, prevent_screen_saver=False):
 		if start_time < 0:
 			start_time = time()
 
@@ -85,7 +85,8 @@ class VNCAutomateClient(VNCDoToolClient):
 			else:
 				# check timeout
 				logging.info('No match for search pattern [%.1f sec]', duration)
-				self.prevent_screen_saver()
+				if prevent_screen_saver:
+					self.keyPress('ctrl')
 				if timeout > 0 and duration >= timeout:
 					raise VNCAutomateException('Search for string "%s" in VNC screen timed out after %.1f seconds!' % (text, duration))
 
@@ -99,9 +100,6 @@ class VNCAutomateClient(VNCDoToolClient):
 		self.deferred.addCallback(lambda _click_point: _check_timeout(_click_point))
 		self.deferred.addCallback(lambda result: self._find_text(text, timeout=timeout, defer=1e-2, start_time=start_time) if result is None else result)
 		return self.deferred
-
-	def prevent_screen_saver(self):
-		self.keyPress('ctrl')
 
 	def mouseMoveToText(self, text, timeout=30, defer=1e-2, log=True):
 		if log:
@@ -117,9 +115,9 @@ class VNCAutomateClient(VNCDoToolClient):
 		deferred.addCallback(lambda _client: deferLater(reactor, 0.1, self.mouseMove, 0, 0))
 		return deferred
 
-	def waitForText(self, text, timeout=30, defer=1e-2):
+	def waitForText(self, text, timeout=30, defer=1e-2, prevent_screen_saver=False):
 		logging.info('waitForText("%s", timeout=%.1f, defer=%.2f)', text, timeout, defer)
-		deferred = self._find_text(text, timeout=timeout, defer=defer)
+		deferred = self._find_text(text, timeout=timeout, defer=defer, prevent_screen_saver=prevent_screen_saver)
 		deferred.addCallback(lambda _pos: self)  # make sure to return self
 		return deferred
 
