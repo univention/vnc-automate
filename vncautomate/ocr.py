@@ -250,7 +250,7 @@ class OCRAlgorithm(object):
 				best_match = ilabel
 				best_distance_square = dist_square
 
-		if best_match:
+		if best_match >= 0:
 			logging.debug('Best match: line %s, squared distance: %s', best_match, best_distance_square)
 			return lines[best_match], best_match
 		return None, best_match
