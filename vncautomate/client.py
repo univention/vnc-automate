@@ -34,8 +34,8 @@
 import logging
 from time import time
 from vncdotool.client import VNCDoToolClient
+from vncdotool.rfb import RAW_ENCODING, PSEUDO_DESKTOP_SIZE_ENCODING
 from twisted.internet.defer import Deferred
-from twisted.internet.threads import deferToThread
 from twisted.internet.task import deferLater
 from twisted.internet import reactor
 from .config import OCRConfig
@@ -53,6 +53,12 @@ class VNCAutomateClient(VNCDoToolClient):
 	def __init__(self):
 		VNCDoToolClient.__init__(self)
 		self.ocr_algo = OCRAlgorithm()
+
+	def vncConnectionMade(self):
+		VNCDoToolClient.vncConnectionMade(self)
+		# TODO: Other (better) encodings could possibly be used here. To avoid
+		# problems I'm gonna stick with RAW_ENCODING for now.
+		self.setEncodings([RAW_ENCODING, PSEUDO_DESKTOP_SIZE_ENCODING])
 
 	def updateOCRConfig(self, *args, **kwargs):
 		if len(args) == 1 and isinstance(args[0], OCRConfig):
