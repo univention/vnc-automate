@@ -1,3 +1,9 @@
+vnc-automate (0.0.1-13) unstable; urgency=medium
+
+  * Bug #43218: Fixed ocr bug with nested html-tags.
+
+ -- Richard Ulmer <ulmer@univention.de>  Tue, 07 Mar 2017 15:32:00 +0100
+
 vnc-automate (0.0.1-12) unstable; urgency=medium
 
   * Bug #43218: Changes necessary for updating the screen-size automatically.

@@ -327,7 +327,7 @@ class OCRAlgorithm(object):
 
 				if len(word):
 					# the word might be packed into an HTML tag such as <strong>
-					word = word[0]
+					word = word.xpath('.//*[not(*)]')[0]
 
 				try:
 					_word = _OCRWord(word.text, bbox)
