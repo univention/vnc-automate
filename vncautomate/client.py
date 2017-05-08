@@ -126,10 +126,6 @@ class VNCAutomateClient(VNCDoToolClient):
 		if len(keys):
 			ikey = keys[0]
 			ikey = ikey.replace(' ', 'space')
-			# FIXME: This is a dirty workaround, which is needed, because our
-			# (qemu) vnc-server doesn't realize it needs to press shift-0 on a
-			# german keyboard to generate an '='.
-			ikey = ikey.replace('=', 'shift-0')
 			self.keyPress(ikey)
 			return deferLater(reactor, 0.1, self.enterKeys, keys[1:], log=False)
 		return self

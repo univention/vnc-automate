@@ -1,3 +1,9 @@
+vnc-automate (0.0.1-15) unstable; urgency=medium
+
+  * Bug #43218: Removed workaround for sending '='
+
+ -- Richard Ulmer <ulmer@univention.de>  Mon, 08 May 2017 16:41:23 +0200
+
 vnc-automate (0.0.1-14) unstable; urgency=medium
 
   * Bug #43218: Added quirky workaround for sending '='
