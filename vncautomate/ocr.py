@@ -357,6 +357,7 @@ class OCRAlgorithm(object):
 		hocr_file_path = mktemp()
 
 		processDeferred = Deferred()
+
 		def _process_output():
 			# read OCR output from temp file
 			hocr_file = open(hocr_file_path + '.html')
@@ -439,8 +440,7 @@ class OCRAlgorithm(object):
 	def find_text_in_image(self, img, pattern):
 		if self.config.dump_dir:
 			img_path = os.path.join(self.config.dump_dir, 'vnc_automate_%s.png' % datetime.isoformat(datetime.now()))
-			logging.info('Dumping image: %s', img_path)
-			img.save(img_path)
+			self.save_image(img, img_path)
 
 		logging.debug('')
 		logging.debug('==========')
@@ -482,3 +482,6 @@ class OCRAlgorithm(object):
 		results_deferred.addCallback(_process_matches)
 		return results_deferred
 
+	def save_image(self, image, path):
+		logging.info('Dumping image: %s', path)
+		image.save(path)
