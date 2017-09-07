@@ -52,9 +52,6 @@ class VNCAutomateClient(VNCDoToolClient):
 	def __init__(self):
 		VNCDoToolClient.__init__(self)
 		self.ocr_algo = OCRAlgorithm()
-		# This is needed because our vnc-server doesn't recognize some
-		# characters (e.g. '@') without the shift key being pressed.
-		self.factory.force_caps = True
 
 	def updateOCRConfig(self, *args, **kwargs):
 		if len(args) == 1 and isinstance(args[0], OCRConfig):

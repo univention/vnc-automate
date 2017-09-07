@@ -1,3 +1,9 @@
+vnc-automate (0.0.1-18) unstable; urgency=medium
+
+  * Bug #43218: Revert last change, since it broke the tool
+
+ -- Richard Ulmer <ulmer@univention.de>  Thu, 07 Sep 2017 12:44:32 +0200
+
 vnc-automate (0.0.1-17) unstable; urgency=medium
 
   * Bug #43218: Force vncdotool to press shift where necessary
