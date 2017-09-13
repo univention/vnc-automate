@@ -1,3 +1,9 @@
+vnc-automate (0.0.1-19) unstable; urgency=medium
+
+  * Bug #43218: Add functionality for subimage-searching
+
+ -- Richard Ulmer <ulmer@univention.de>  Wed, 13 Sep 2017 12:48:48 +0200
+
 vnc-automate (0.0.1-18) unstable; urgency=medium
 
   * Bug #43218: Revert last change, since it broke the tool
