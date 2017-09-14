@@ -98,8 +98,8 @@ class _ReadStdinProcessProtocol(ProcessProtocol):
 	def errReceived(self, data):
 		logging.debug('Ignoring received data on stderr: %s', data)
 
-	def outConnectionLost(self):
-		logging.debug('Process terminated: %s' % self.cmd)
+	def procesEnded(self, reason):
+		logging.debug('Process terminated: %s -> exit code: %s' % (self.cmd, reason.value.exitCode))
 		self.callback()
 
 
