@@ -34,6 +34,7 @@
 import os
 import difflib
 import re
+import time
 import logging
 from datetime import datetime
 import lxml.etree as ET
@@ -98,7 +99,12 @@ class _ReadStdinProcessProtocol(ProcessProtocol):
 	def errReceived(self, data):
 		logging.debug('Ignoring received data on stderr: %s', data)
 
-	def procesEnded(self, reason):
+	def outConnectionLost(self):
+		# FIXME: It's unclear what happens here, but without the sleep
+		# processEnded() won't be called.
+		time.sleep(0.5)
+
+	def processEnded(self, reason):
 		logging.debug('Process terminated: %s -> exit code: %s' % (self.cmd, reason.value.exitCode))
 		self.callback()
 
