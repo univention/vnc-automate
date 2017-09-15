@@ -1,3 +1,9 @@
+vnc-automate (0.0.1-21) unstable; urgency=medium
+
+  * Bug #43218: Fix non-terminating tesseract processes
+
+ -- Richard Ulmer <ulmer@univention.de>  Fri, 15 Sep 2017 16:07:12 +0200
+
 vnc-automate (0.0.1-20) unstable; urgency=medium
 
   * Bug #43218: Fix non-terminating tesseract processes
