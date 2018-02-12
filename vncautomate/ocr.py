@@ -366,12 +366,12 @@ class OCRAlgorithm(object):
 
 		def _process_output():
 			# read OCR output from temp file
-			hocr_file = open(hocr_file_path + '.html')
+			hocr_file = open(hocr_file_path + '.hocr')
 			hocr_data = hocr_file.read()
 			logging.debug('Read %d bytes of data from tesseract output', len(hocr_data))
 
 			logging.debug('Remove temporary image and output files')
-			os.unlink(hocr_file_path + '.html')
+			os.unlink(hocr_file_path + '.hocr')
 			os.unlink(img_file_path)
 
 			# get the recognized words

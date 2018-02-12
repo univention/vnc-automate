@@ -1,3 +1,9 @@
+vnc-automate (0.0.2-1) unstable; urgency=medium
+
+  * Bug #43218: use tesseract hocr file
+
+ -- Felix Botner <botner@univention.de>  Mon, 12 Feb 2018 10:40:29 +0100
+
 vnc-automate (0.0.1-22) unstable; urgency=medium
 
   * Bug #43218: Version Bump
