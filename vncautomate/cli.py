@@ -40,7 +40,7 @@ from twisted.internet import reactor
 from twisted.internet.threads import deferToThread
 
 from .config import OCRConfig
-from . import VNCConnection
+from . import VNCConnection, init_logger
 from .ocr import OCRAlgorithm
 
 
