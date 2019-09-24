@@ -3,9 +3,9 @@
 # Python VNC automate package
 #  rules file for generating the deb package
 #
-# Copyright 2016 Univention GmbH
+# Copyright 2016-2022 Univention GmbH
 #
-# http://www.univention.de/
+# https://www.univention.de/
 #
 # All rights reserved.
 #
