@@ -36,7 +36,7 @@ import logging
 import argparse
 from PIL import Image
 from .config import OCRConfig
-from . import VNCConnection
+from . import VNCConnection, init_logger
 from .ocr import OCRAlgorithm
 
 
