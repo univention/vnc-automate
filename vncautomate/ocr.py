@@ -31,6 +31,8 @@
 # <http://www.gnu.org/licenses/>.
 #
 
+from __future__ import absolute_import
+
 import os
 import difflib
 import re
@@ -45,6 +47,7 @@ from tempfile import mktemp
 from twisted.internet import reactor
 from twisted.internet.protocol import ProcessProtocol
 from twisted.internet.defer import gatherResults, Deferred
+
 from . import segment_line
 from .config import OCRConfig
 
@@ -365,8 +368,8 @@ class OCRAlgorithm(object):
 
 		def _process_output():
 			# read OCR output from temp file
-			hocr_file = open(hocr_file_path + '.hocr')
-			hocr_data = hocr_file.read()
+			with open(hocr_file_path + '.hocr') as hocr_file:
+				hocr_data = hocr_file.read()
 			self.log.debug('Read %d bytes from tesseract', len(hocr_data))
 
 			self.log.debug('Removing %r and %r ...', hocr_file_path, img_file_path)
@@ -392,7 +395,7 @@ class OCRAlgorithm(object):
 			)
 			processDeferred.callback(words)
 
-		cmd = ['/usr/bin/tesseract', img_file_path, hocr_file_path, '-l', self.config.lang, 'hocr']
+		cmd = ['tesseract', img_file_path, hocr_file_path, '-l', self.config.lang, 'hocr']
 		self.log.debug('Running command: %s', ' '.join(cmd))
 		_ReadStdinProcessProtocol(_process_output, cmd)
 
@@ -411,10 +414,10 @@ class OCRAlgorithm(object):
 		mat_shape = tuple(reversed(img.size))
 		vertical_line_segments = -np.ones(mat_shape, dtype='int64')
 		vertical_lines = segment_line.find_lines(vertical_edges, vertical_line_segments, self.config)
-		#vertical_lines = self.find_lines(vertical_edges, vertical_line_segments)
+		# vertical_lines = self.find_lines(vertical_edges, vertical_line_segments)
 		horizontal_line_segments = -np.ones(mat_shape, dtype='int64')
 		horizontal_lines = segment_line.find_lines(horizontal_edges, horizontal_line_segments, self.config)
-		#horizontal_lines = self.find_lines(horizontal_edges, horizontal_line_segments)
+		# horizontal_lines = self.find_lines(horizontal_edges, horizontal_line_segments)
 		boxes = self.detect_boxes(horizontal_lines, vertical_lines, horizontal_line_segments, vertical_line_segments)
 
 		if self.config.dump_boxes:

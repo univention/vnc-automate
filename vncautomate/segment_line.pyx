@@ -1,4 +1,6 @@
+# distutils: language = c++
 # -*- coding: utf-8 -*-
+#cython: language_level=3
 #
 # Python VNC automate
 #
@@ -29,7 +31,6 @@
 # /usr/share/common-licenses/AGPL-3; if not, see
 # <http://www.gnu.org/licenses/>.
 
-# distutils: language=c++
 
 import numpy as np
 import logging

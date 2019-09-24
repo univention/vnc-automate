@@ -34,7 +34,11 @@
 import os
 import logging
 import argparse
+
 from PIL import Image
+from twisted.internet import reactor
+from twisted.internet.threads import deferToThread
+
 from .config import OCRConfig
 from . import VNCConnection, init_logger
 from .ocr import OCRAlgorithm
@@ -83,11 +87,13 @@ def main_vnc(host, words, config):
 
 
 def main_img(img_path, words, config):
+
 	def run_on_img():
 		logging.info('Loading image %s', img_path)
 		ocr_algo = OCRAlgorithm(config)
-		img = Image.open(img_path)
-		click_point = ocr_algo.find_text_in_image(img, words)
+		with Image.open(img_path) as img:
+			click_point = ocr_algo.find_text_in_image(img, words)
+
 		logging.info('Final click point: %s', click_point)
 		reactor.stop()
 

@@ -1,0 +1,4 @@
+build/
+vncautomate/*.c
+vncautomate/*.cpp
+vnc_automate.egg-info/

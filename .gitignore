@@ -1,0 +1,13 @@
+vncautomate/*.c
+vncautomate/*.cpp
+vncautomate/*.so
+vnc_automate.egg-info/
+build/
+debian/files
+debian/*.debhelper.log
+debian/*.substvars
+debian/debhelper-build-stamp
+debian/*.debhelper
+debian/python-vnc-automate/
+debian/python3-vnc-automate/
+debian/tmp/

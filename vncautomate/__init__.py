@@ -31,10 +31,12 @@
 # <http://www.gnu.org/licenses/>.
 #
 
-import logging
 import sys
+import logging
+
 from vncdotool import api
 from vncdotool.client import VNCDoToolFactory
+
 from .client import VNCAutomateClient
 
 

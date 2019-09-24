@@ -1,3 +1,9 @@
+vnc-automate (1.0.0) unstable; urgency=low
+
+  * Bug #28497: Add Python 3 support
+
+ -- Philipp Hahn <hahn@univention.de>  Tue, 14 Sep 2021 12:51:33 +0200
+
 vnc-automate (0.0.2-3) unstable; urgency=medium
 
   * Bug #52881: pre-compile segment_line, dont use pyximportcpp

@@ -30,10 +30,13 @@
 # /usr/share/common-licenses/AGPL-3; if not, see
 # <http://www.gnu.org/licenses/>.
 
+export DH_VERBOSE := 1
+export PYBUILD_VERBOSE := 1
+export PYBUILD_BEFORE_TEST := [ -d build/extra/vncdotool ] || http_proxy= https_proxy= pip install -t build/extra --no-deps vncdotool
+export PYBUILD_BEFORE_TEST_python3 := [ -d build/extra/vncdotool ] || http_proxy= https_proxy= pip3 install -t build/extra --no-deps vncdotool
+
 %:
 	dh $@ --with python2,python3 --buildsystem=pybuild
 
-# test suite with python2 is hard to setup, once we migrate this
-# to python3 only, we should reactivate the tests
 override_dh_auto_test:
-	true
+	PYTHONPATH=$$PWD/build/extra dh_auto_test
