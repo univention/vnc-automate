@@ -3,7 +3,7 @@
 #
 # Python VNC automate
 #
-# Copyright 2016 Univention GmbH
+# Copyright 2016-2019 Univention GmbH
 #
 # http://www.univention.de/
 #
@@ -31,6 +31,8 @@
 # <http://www.gnu.org/licenses/>.
 #
 
+from __future__ import absolute_import
+
 import os
 import difflib
 import re
@@ -45,11 +47,9 @@ from tempfile import mktemp
 from twisted.internet import reactor
 from twisted.internet.protocol import ProcessProtocol
 from twisted.internet.defer import gatherResults, Deferred
-import pyximportcpp
-import segment_line
-from .config import OCRConfig
 
-pyximportcpp._pass()
+from . import segment_line
+from .config import OCRConfig
 
 
 def img_from_np(ar):
@@ -366,8 +366,8 @@ class OCRAlgorithm(object):
 
 		def _process_output():
 			# read OCR output from temp file
-			hocr_file = open(hocr_file_path + '.hocr')
-			hocr_data = hocr_file.read()
+			with open(hocr_file_path + '.hocr') as hocr_file:
+				hocr_data = hocr_file.read()
 			logging.debug('Read %d bytes of data from tesseract output', len(hocr_data))
 
 			logging.debug('Remove temporary image and output files')
@@ -385,7 +385,7 @@ class OCRAlgorithm(object):
 			logging.debug('Detected words: %s', '\n'.join([' '.join([iword and iword.word for iword in line]) for line in words]))
 			processDeferred.callback(words)
 
-		cmd = ['/usr/bin/tesseract', img_file_path, hocr_file_path, '-l', self.config.lang, 'hocr']
+		cmd = ['tesseract', img_file_path, hocr_file_path, '-l', self.config.lang, 'hocr']
 		logging.debug('Running: tesseract %s' % (' '.join(cmd), ))
 		_ReadStdinProcessProtocol(_process_output, cmd)
 
@@ -404,10 +404,10 @@ class OCRAlgorithm(object):
 		mat_shape = tuple(reversed(img.size))
 		vertical_line_segments = -np.ones(mat_shape, dtype='int64')
 		vertical_lines = segment_line.find_lines(vertical_edges, vertical_line_segments, self.config)
-		#vertical_lines = self.find_lines(vertical_edges, vertical_line_segments)
+		# vertical_lines = self.find_lines(vertical_edges, vertical_line_segments)
 		horizontal_line_segments = -np.ones(mat_shape, dtype='int64')
 		horizontal_lines = segment_line.find_lines(horizontal_edges, horizontal_line_segments, self.config)
-		#horizontal_lines = self.find_lines(horizontal_edges, horizontal_line_segments)
+		# horizontal_lines = self.find_lines(horizontal_edges, horizontal_line_segments)
 		boxes = self.detect_boxes(horizontal_lines, vertical_lines, horizontal_line_segments, vertical_line_segments)
 
 		if self.config.dump_boxes:

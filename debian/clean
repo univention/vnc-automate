@@ -1,0 +1,3 @@
+vncautomate/*.c
+vncautomate/*.cpp
+build/

@@ -3,7 +3,7 @@
 # Python VNC automate package
 #  rules file for generating the deb package
 #
-# Copyright 2016 Univention GmbH
+# Copyright 2016-2019 Univention GmbH
 #
 # http://www.univention.de/
 #
@@ -31,4 +31,4 @@
 # <http://www.gnu.org/licenses/>.
 
 %:
-	dh $@ --with python2,python3
+	dh $@ --with python2,python3 --buildsystem=pybuild

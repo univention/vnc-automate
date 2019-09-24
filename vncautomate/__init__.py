@@ -3,7 +3,7 @@
 #
 # Python VNC automate
 #
-# Copyright 2016 Univention GmbH
+# Copyright 2016-2019 Univention GmbH
 #
 # http://www.univention.de/
 #
@@ -31,10 +31,12 @@
 # <http://www.gnu.org/licenses/>.
 #
 
-import logging
 import sys
+import logging
+
 from vncdotool import api
 from vncdotool.client import VNCDoToolFactory
+
 from .client import VNCAutomateClient
 
 
