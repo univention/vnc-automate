@@ -32,18 +32,22 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
 
+from builtins import range
+from past.builtins import basestring
 import os
 import difflib
 import re
 import time
 import logging
 from datetime import datetime
+from tempfile import mktemp
+
 import lxml.etree as ET
 from PIL import Image, ImageDraw
 import numpy as np
 from scipy.signal import sepfir2d
-from tempfile import mktemp
 from twisted.internet import reactor
 from twisted.internet.protocol import ProcessProtocol
 from twisted.internet.defer import gatherResults, Deferred
@@ -128,15 +132,15 @@ class OCRAlgorithm(object):
 		gradient_kernel = (0, 1, 0, -1, 0)
 		smoothing_kernel = np.ones((7), dtype='float32')
 
-		vertical_edges = sepfir2d(mat, gradient_kernel, smoothing_kernel) / 7
+		vertical_edges = sepfir2d(mat, gradient_kernel, smoothing_kernel) // 7
 		vertical_edges_positive = vertical_edges * (vertical_edges > 0)
 		vertical_edges_negative = vertical_edges * (vertical_edges < 0)
-		vertical_edges = (np.roll(vertical_edges_positive, -1, axis=1) - np.roll(vertical_edges_negative, 1, axis=1)) / 2
+		vertical_edges = (np.roll(vertical_edges_positive, -1, axis=1) - np.roll(vertical_edges_negative, 1, axis=1)) // 2
 
-		horizontal_edges = sepfir2d(mat, smoothing_kernel, gradient_kernel) / 7
+		horizontal_edges = sepfir2d(mat, smoothing_kernel, gradient_kernel) // 7
 		horizontal_edges_positive = horizontal_edges * (horizontal_edges > 0)
 		horizontal_edges_negative = horizontal_edges * (horizontal_edges < 0)
-		horizontal_edges = (np.roll(horizontal_edges_positive, -1, axis=0) - np.roll(horizontal_edges_negative, 1, axis=0)) / 2
+		horizontal_edges = (np.roll(horizontal_edges_positive, -1, axis=0) - np.roll(horizontal_edges_negative, 1, axis=0)) // 2
 
 		if self.config.dump_x_gradients:
 			img_from_np(vertical_edges).save(self.config.dump_x_gradients)
@@ -176,7 +180,7 @@ class OCRAlgorithm(object):
 
 		variance = line_pixels.var(0)
 		covariance = variance[0] / (variance[1] + 0.0000001)  # avoid division by zero
-		if covariance < self.config.line_segment_min_covariance and covariance > 1.0 / self.config.line_segment_min_covariance:
+		if covariance < self.config.line_segment_min_covariance and covariance > 1.0 // self.config.line_segment_min_covariance:
 			# segment is not narrow enough and more blob-like
 			raise ValueError('Segment is no line!')
 
@@ -197,8 +201,8 @@ class OCRAlgorithm(object):
 	def find_lines(self, edges, line_segments):
 		logging.debug('Detecting line segments in image...')
 		lines = []
-		for y in xrange(edges.shape[0]):
-			for x in xrange(edges.shape[1]):
+		for y in range(edges.shape[0]):
+			for x in range(edges.shape[1]):
 					if edges[y, x] > self.config.line_segment_high_threshold and line_segments[y, x] < 0:
 						try:
 							line_pixels = self.segment_line(x, y, len(lines), edges, line_segments)
@@ -233,13 +237,13 @@ class OCRAlgorithm(object):
 			]
 			return min(results)
 
-		for dist in xrange(1, 5):
-			for x in xrange(_x - dist, _x + dist):
+		for dist in range(1, 5):
+			for x in range(_x - dist, _x + dist):
 				# scan above the origin
 				_test_label(x, _y - dist)
 				# scan below the origin
 				_test_label(x + 1, _y + dist)
-			for y in xrange(_y - dist, _y + dist):
+			for y in range(_y - dist, _y + dist):
 				# scan left of the origin
 				_test_label(_x - dist, y + 1)
 				# scan right of the origin
@@ -276,8 +280,7 @@ class OCRAlgorithm(object):
 		# a rectangle starting from the top left corner
 		logging.debug('Detecting boxes in image given the detected lines')
 		boxes = []
-		for itop in xrange(len(horizontal_lines)):
-			top = horizontal_lines[itop]
+		for itop, top in enumerate(horizontal_lines):
 			left, ileft = self.match_line_in_neighborhood(top[0], top[1], itop, vertical_lines, vertical_line_segments)
 			if left is None:
 				continue
@@ -419,21 +422,21 @@ class OCRAlgorithm(object):
 	def find_best_matching_words(self, all_words, pattern):
 		best_match = (self.config.min_str_match_score, None)
 		for line in all_words:
-			for iword in xrange(len(line)):
-				logging.debug('Matching word: %s', line[iword])
+			for iword, word in enumerate(line):
+				logging.debug('Matching word: %s', word)
 				scores = np.zeros(len(pattern))
 				words = []
-				for i in xrange(len(pattern)):
+				for i, pat in enumerate(pattern):
 					if i + iword >= len(line):
 						break
-					scores[i] = line[iword + i].fuzzy_match(pattern[i])
+					scores[i] = line[iword + i].fuzzy_match(pat)
 					words.append(line[iword + i])
 
 				# compute overall matching score and penalize slightly
 				# by coverage of whole line
 				logging.debug('  Matched words: %s', words)
 				score = scores.mean()
-				penalty = (1.0 * len(pattern)) / len(line)
+				penalty = (1.0 * len(pattern)) // len(line)
 				final_score = score * (0.9 + penalty * 0.1)
 				logging.debug('  Score: %s * (0.9 + %s * 0.1)  = %s', scores, penalty, final_score)
 				match = (final_score, words)

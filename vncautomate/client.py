@@ -31,17 +31,19 @@
 # <http://www.gnu.org/licenses/>.
 #
 
-from .config import OCRConfig
-from .ocr import OCRAlgorithm, np_from_img
+from time import time
+import logging
+
 from PIL import Image
 from scipy import ndimage
 from scipy import signal
-from time import time
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred
 from twisted.internet.task import deferLater
 from vncdotool.client import VNCDoToolClient
-import logging
+
+from .config import OCRConfig
+from .ocr import OCRAlgorithm, np_from_img
 
 
 class VNCAutomateException(ValueError):
@@ -146,11 +148,11 @@ class VNCAutomateClient(VNCDoToolClient):
 		subimg = ndimage.sobel(subimg, axis=0) + ndimage.sobel(subimg, axis=1)
 
 		match_maxtrix = signal.fftconvolve(img, subimg[::-1, ::-1], mode='same')
-		normalized_match_matrix = match_maxtrix / (subimg * subimg).sum()
+		normalized_match_matrix = match_maxtrix // (subimg * subimg).sum()
 		best_match_value = normalized_match_matrix.max()
 
 		best_match_x = normalized_match_matrix.argmax() % normalized_match_matrix.shape[1]
-		best_match_y = normalized_match_matrix.argmax() / normalized_match_matrix.shape[1]
+		best_match_y = normalized_match_matrix.argmax() // normalized_match_matrix.shape[1]
 
 		logging.info('image_match_value: %s %s %s' % (best_match_value, best_match_x, best_match_y))
 		return best_match_value, (best_match_x, best_match_y)
