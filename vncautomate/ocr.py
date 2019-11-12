@@ -56,6 +56,9 @@ from . import segment_line
 from .config import OCRConfig
 
 
+DEBUG = os.getenv('VNCAUTOMATE_DEBUG', '')
+
+
 def img_from_np(ar):
 	return Image.fromarray(ar.round().astype(np.uint8))
 
@@ -353,29 +356,31 @@ class OCRAlgorithm(object):
 			logging.debug('Performing OCR on VNC screen in area %s and with resizing %s', box, self.config.img_resize)
 		else:
 			logging.debug('Performing OCR on VNC screen with resizing %s', self.config.img_resize)
-		img = _img
-		if box:
-			img = _img.crop(box)
+
+		# temporary file for tesseract
+		out_file_path = mktemp(prefix='vncautomate.')
+		hocr_file_path = out_file_path + '.hocr'
+		img_file_path = out_file_path + '.tiff'
+
+		img = _img.crop(box) if box else _img
 		new_width = int(round(img.width * self.config.img_resize))
 		new_height = int(round(img.height * self.config.img_resize))
 		img = img.resize((new_width, new_height))
-		img_file_path = mktemp(suffix='.tiff')
 		img.save(img_file_path)
-
-		# temporary file for tesseract output
-		hocr_file_path = mktemp()
 
 		processDeferred = Deferred()
 
 		def _process_output():
 			# read OCR output from temp file
-			with open(hocr_file_path + '.hocr') as hocr_file:
+			with open(hocr_file_path) as hocr_file:
 				hocr_data = hocr_file.read()
+
 			logging.debug('Read %d bytes of data from tesseract output', len(hocr_data))
 
-			logging.debug('Remove temporary image and output files')
-			os.unlink(hocr_file_path + '.hocr')
-			os.unlink(img_file_path)
+			logging.debug('Removing %r and %r ...', hocr_file_path, img_file_path)
+			if not DEBUG:
+				os.unlink(hocr_file_path)
+				os.unlink(img_file_path)
 
 			# get the recognized words
 			words = self.get_words_from_hocr(hocr_data)
@@ -388,7 +393,7 @@ class OCRAlgorithm(object):
 			logging.debug('Detected words: %s', '\n'.join([' '.join([iword and iword.word for iword in line]) for line in words]))
 			processDeferred.callback(words)
 
-		cmd = ['tesseract', img_file_path, hocr_file_path, '-l', self.config.lang, 'hocr']
+		cmd = ['tesseract', img_file_path, out_file_path, '-l', self.config.lang, 'hocr']
 		logging.debug('Running: tesseract %s' % (' '.join(cmd), ))
 		_ReadStdinProcessProtocol(_process_output, cmd)
 
