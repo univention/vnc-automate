@@ -50,7 +50,7 @@ def add_config_options_to_parser(parser):
 		metavar = name.upper()
 		if name.startswith('dump_'):
 			metavar = 'IMG_PATH'
-		parser.add_argument(flag_name, dest=name, default=member.default, help=help, metavar=metavar)
+		parser.add_argument(flag_name, dest=name, default=member.default, help=help, metavar=metavar, type=member.type)
 
 
 def get_parser():
