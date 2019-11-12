@@ -31,6 +31,8 @@
 # <http://www.gnu.org/licenses/>.
 #
 
+import os
+import logging
 import argparse
 from PIL import Image
 from .config import OCRConfig
@@ -81,19 +83,19 @@ def main_vnc(host, words, config):
 
 
 def main_img(img_path, words, config):
-		def run_on_img():
-			logging.info('Loading image %s', img_path)
-			ocr_algo = OCRAlgorithm(config)
-			img = Image.open(img_path)
-			click_point = ocr_algo.find_text_in_image(img, words)
-			logging.info('Final click point: %s', click_point)
-			reactor.stop()
+	def run_on_img():
+		logging.info('Loading image %s', img_path)
+		ocr_algo = OCRAlgorithm(config)
+		img = Image.open(img_path)
+		click_point = ocr_algo.find_text_in_image(img, words)
+		logging.info('Final click point: %s', click_point)
+		reactor.stop()
 
-		def err_handler(err):
-			logging.error(err)
+	def err_handler(err):
+		logging.error(err)
 
-		deferToThread(run_on_img).addErrback(err_handler)
-		reactor.run()
+	deferToThread(run_on_img).addErrback(err_handler)
+	reactor.run()
 
 
 if __name__ == '__main__':

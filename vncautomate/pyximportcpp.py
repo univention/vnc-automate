@@ -20,6 +20,7 @@ def new_get_distutils_extension(modname, pyxfilename, language_level=None):
 	extension_mod.language = 'c++'
 	return extension_mod, setup_args
 
+
 pyximport.pyximport.get_distutils_extension = new_get_distutils_extension
 pyximport.install()
 

@@ -51,7 +51,7 @@ def init_logger(debug_level='info'):
 		)
 		logging.getLogger().setLevel(getattr(logging, debug_level.upper()))
 	except AttributeError:
-		logger.error('Given log level "%s" is unknown', debug_level)
+		logging.error('Given log level "%s" is unknown', debug_level)
 		sys.exit(1)
 
 
