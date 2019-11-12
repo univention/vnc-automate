@@ -40,7 +40,7 @@ import re
 import time
 import logging
 from datetime import datetime
-from tempfile import mktemp
+from tempfile import gettempdir
 
 import lxml.etree as ET
 from PIL import Image, ImageDraw, ImageOps
@@ -52,6 +52,8 @@ from twisted.internet.defer import gatherResults, Deferred
 
 from . import segment_line
 from .config import OCRConfig
+
+KEEP_TMP = os.getenv('VNCAUTOMATE_TMP', '')
 
 
 def img_from_np(ar):
@@ -363,29 +365,31 @@ class OCRAlgorithm(object):
 			self.log.debug('Performing OCR on VNC screen in area %s and with resizing %s', box, self.config.img_resize)
 		else:
 			self.log.debug('Performing OCR on VNC screen with resizing %s', self.config.img_resize)
-		img = _img
-		if box:
-			img = _img.crop(box)
+
+		# temporary file for tesseract
+		out_file_path = os.path.join(gettempdir(), 'vnc_automate_%s' % datetime.now().isoformat())
+		hocr_file_path = out_file_path + '.hocr'
+		img_file_path = out_file_path + '.tiff'
+
+		img = _img.crop(box) if box else _img
 		new_width = int(round(img.width * self.config.img_resize))
 		new_height = int(round(img.height * self.config.img_resize))
 		img = img.resize((new_width, new_height))
-		img_file_path = mktemp(suffix='.tiff')
 		img.save(img_file_path)
-
-		# temporary file for tesseract output
-		hocr_file_path = mktemp()
 
 		processDeferred = Deferred()
 
 		def _process_output():
 			# read OCR output from temp file
-			with open(hocr_file_path + '.hocr') as hocr_file:
+			with open(hocr_file_path) as hocr_file:
 				hocr_data = hocr_file.read()
+
 			self.log.debug('Read %d bytes from tesseract', len(hocr_data))
 
 			self.log.debug('Removing %r and %r ...', hocr_file_path, img_file_path)
-			os.unlink(hocr_file_path + '.hocr')
-			os.unlink(img_file_path)
+			if not KEEP_TMP:
+				os.unlink(hocr_file_path)
+				os.unlink(img_file_path)
 
 			# get the recognized words
 			words = self.get_words_from_hocr(hocr_data)
@@ -406,7 +410,7 @@ class OCRAlgorithm(object):
 			)
 			processDeferred.callback(words)
 
-		cmd = ['tesseract', img_file_path, hocr_file_path, '-l', self.config.lang, 'hocr']
+		cmd = ['tesseract', img_file_path, out_file_path, '-l', self.config.lang, 'hocr']
 		self.log.debug('Running command: %s', ' '.join(cmd))
 		_ReadStdinProcessProtocol(_process_output, cmd)
 
@@ -516,5 +520,5 @@ class OCRAlgorithm(object):
 		return results_deferred
 
 	def save_image(self, image, path):
-		logging.info('Dumping image: %s', path)
+		self.log.info('Dumping image: %s', path)
 		image.save(path)

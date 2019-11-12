@@ -29,3 +29,18 @@ docker run --rm -it -w /test -v $HOME/git/ucs/test:/test \
 # now in the container, start an installation on a pre-defined machine
 python utils/installation_test/vnc-install-ucs.py --vnc isala:2 --language deu --role basesystem --fqdn base
 ```
+
+# Testing
+
+```
+mkdir dump/
+VNCAUTOMATE_TMP=1 \
+python3 -m vncautomate.cli \
+	--log debug \
+	--dump-boxes dump/boxes.png \
+	--dump-dir dump/ \
+	--dump-screen dump/screen.png \
+	--dump-x-gradients dump/x.png \
+	--dump-y-gradients dump/y.png \
+	--lang eng tests/login.png Username
+```
