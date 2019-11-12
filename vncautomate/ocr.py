@@ -32,6 +32,7 @@
 #
 
 from __future__ import absolute_import
+from __future__ import division
 
 import os
 import difflib
@@ -39,11 +40,12 @@ import re
 import time
 import logging
 from datetime import datetime
+from tempfile import mktemp
+
 import lxml.etree as ET
 from PIL import Image, ImageDraw, ImageOps
 import numpy as np
 from scipy.signal import sepfir2d
-from tempfile import mktemp
 from twisted.internet import reactor
 from twisted.internet.protocol import ProcessProtocol
 from twisted.internet.defer import gatherResults, Deferred
@@ -199,8 +201,8 @@ class OCRAlgorithm(object):
 	def find_lines(self, edges, line_segments):
 		self.log.debug('Detecting line segments in image...')
 		lines = []
-		for y in xrange(edges.shape[0]):
-			for x in xrange(edges.shape[1]):
+		for y in range(edges.shape[0]):
+			for x in range(edges.shape[1]):
 					if edges[y, x] > self.config.line_segment_high_threshold and line_segments[y, x] < 0:
 						try:
 							line_pixels = self.segment_line(x, y, len(lines), edges, line_segments)
@@ -235,13 +237,22 @@ class OCRAlgorithm(object):
 			]
 			return min(results)
 
-		for dist in xrange(1, 5):
-			for x in xrange(_x - dist, _x + dist):
+		# ......... ......... ......... 1----->27
+		# ......... ......... .1--->27. 5       |
+		# ......... ..1->27.. .5     |. |       |
+		# ...127... ..5   |.. .|     |. |       |
+		# ...508... ..| 0 V.. .|  0  |. |   0   |
+		# ...634... ..V   8.. .|     V. |       |
+		# ......... ..63->4.. .V     8. |       V
+		# ......... ......... .63--->4. V       8
+		# ......... ......... ......... 63----->4
+		for dist in range(1, 5):
+			for x in range(_x - dist, _x + dist):
 				# scan above the origin
 				_test_label(x, _y - dist)
 				# scan below the origin
 				_test_label(x + 1, _y + dist)
-			for y in xrange(_y - dist, _y + dist):
+			for y in range(_y - dist, _y + dist):
 				# scan left of the origin
 				_test_label(_x - dist, y + 1)
 				# scan right of the origin
@@ -278,8 +289,7 @@ class OCRAlgorithm(object):
 		# a rectangle starting from the top left corner
 		self.log.debug('Detecting boxes in image given the detected lines')
 		boxes = []
-		for itop in xrange(len(horizontal_lines)):
-			top = horizontal_lines[itop]
+		for itop, top in enumerate(horizontal_lines):
 			left, ileft = self.match_line_in_neighborhood(top[0], top[1], itop, vertical_lines, vertical_line_segments)
 			if left is None:
 				continue
@@ -429,14 +439,14 @@ class OCRAlgorithm(object):
 	def find_best_matching_words(self, all_words, pattern):
 		best_match = (self.config.min_str_match_score, None)
 		for line in all_words:
-			for iword in xrange(len(line)):
-				self.log.debug('Matching word: %s', line[iword])
+			for iword, word in enumerate(line):
+				self.log.debug('Matching word: %s', word)
 				scores = np.zeros(len(pattern))
 				words = []
-				for i in xrange(len(pattern)):
+				for i, pat in enumerate(pattern):
 					if i + iword >= len(line):
 						break
-					scores[i] = line[iword + i].fuzzy_match(pattern[i])
+					scores[i] = line[iword + i].fuzzy_match(pat)
 					words.append(line[iword + i])
 
 				# compute overall matching score and penalize slightly
@@ -460,7 +470,7 @@ class OCRAlgorithm(object):
 
 		self.log.debug('')
 		self.log.debug('==========')
-		if isinstance(pattern, basestring):
+		if not isinstance(pattern, list):
 			# make sure that we got a list of strings as pattern
 			pattern = pattern.split()
 		pattern = [i.lower() for i in pattern]

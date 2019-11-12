@@ -31,18 +31,21 @@
 # <http://www.gnu.org/licenses/>.
 #
 
-from .config import OCRConfig
-from .ocr import OCRAlgorithm, np_from_img
+from __future__ import division
+
+from time import sleep, time
+import logging
+
 from PIL import Image
 from scipy import ndimage
 from scipy import signal
-from time import time
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred
 from twisted.internet.task import deferLater
 from vncdotool.client import VNCDoToolClient
-from time import sleep
-import logging
+
+from .config import OCRConfig
+from .ocr import OCRAlgorithm, np_from_img
 
 
 class VNCAutomateException(ValueError):
