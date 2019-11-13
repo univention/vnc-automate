@@ -57,7 +57,7 @@ def get_parser():
 	parser = argparse.ArgumentParser(description='Automation tool for VNC sessions using on OCR.')
 	parser.add_argument('host', metavar='vnc_host', help='Host with VNC port to connect to (can also be a file for testing purposes)')
 	parser.add_argument('words', nargs='+', metavar='word', help='Words that will be matched and clicked upon in the VNC session')
-	parser.add_argument('--log, -l', dest='log', default='info', help='Log level (debug, info, warn, error, critical)')
+	parser.add_argument('--log', '-l', dest='log', default='info', help='Log level (debug, info, warn, error, critical)', choices=('debug', 'info', 'warn', 'error', 'critial'))
 	add_config_options_to_parser(parser)
 	return parser
 
