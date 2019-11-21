@@ -382,7 +382,7 @@ class OCRAlgorithm(object):
 
 		def _process_output():
 			# read OCR output from temp file
-			with open(hocr_file_path) as hocr_file:
+			with open(hocr_file_path, 'rb') as hocr_file:
 				hocr_data = hocr_file.read()
 
 			self.log.debug('Read %d bytes from tesseract', len(hocr_data))
