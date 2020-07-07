@@ -1,0 +1,121 @@
+stages:
+  - test
+  - debian
+  - docker
+  - deploy
+
+variables:
+  LANG: "C.UTF-8"
+  DEBIAN_FRONTEND: noninteractive
+  CI_REGISTRY: docker-registry.knut.univention.de
+  CI_REGISTRY_IMAGE: $CI_REGISTRY/knut/vnc-automate
+  DOCKER_HOST: tcp://docker:2375/
+  DOCKER_DRIVER: overlay2
+  UCS_RELEASE: 444
+  GIT_STRATEGY: fetch
+  GIT_SUBMODULE_STRATEGY: none
+  GIT_DEPTH: "3"
+
+test:
+  stage: test
+  image: $CI_REGISTRY/phahn/ucs-devbase:$UCS_RELEASE
+  cache:
+    paths:
+      - .tox
+  before_script:
+    - apt-get -qq install tox
+  script:
+    - tox
+
+debian:
+  stage: debian
+  interruptible: true
+  image: $CI_REGISTRY/phahn/ucs-devbase:$UCS_RELEASE
+  before_script:
+    - apt-get -qq install -no-install-recommends curl unzip
+    - 'curl -k --location --output artifacts.zip --header "JOB-TOKEN: $CI_JOB_TOKEN" "https://git.knut.univention.de/api/v4/projects/49/jobs/artifacts/phahn/python3/download?job=debian"'
+    - rm -rf deb
+    - unzip artifacts.zip 'deb/*.deb'
+    - 'cd deb && dpkg-scanpackages . > Packages && cd ..'
+    - echo "deb [trusted=yes] file://$PWD/deb/ ./" > /etc/apt/sources.list.d/10temp.list
+    - apt-get -qq update
+    - apt-get -q --assume-yes build-dep .
+  script:
+    - dpkg-buildpackage --no-sign
+    - sed -rne '/^Files:/,${s,^ \S+ \S+ \S+ \S+ (\S+)$,mv -t deb/ ../\1,e}'  ../vnc-automate_*.changes
+    - mv -t deb/ ../vnc-automate_*.changes
+    - 'cd deb && dpkg-scanpackages . > Packages && cd ..'
+  artifacts:
+    paths:
+      - deb/
+    expire_in: 1 day
+
+docker:
+  stage: docker
+  interruptible: true
+  image: docker:stable
+  dependencies:
+    - debian
+  services:
+    - name: $CI_REGISTRY/ucs/docker:dind
+      alias: docker
+  tags:
+    - docker
+  script:
+    - >
+      docker build
+      --pull
+      -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+      --build-arg ucs=$UCS_RELEASE
+      -f Dockerfile
+      deb
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+
+Push latest:
+  stage: deploy
+  variables:
+    GIT_STRATEGY: none
+  only:
+    - master
+  image: docker:stable
+  services:
+    - name: $CI_REGISTRY/ucs/docker:dind
+      alias: docker
+  tags:
+    - docker
+  script:
+    - docker pull "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+    - docker tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA" "$CI_REGISTRY_IMAGE:latest"
+    - docker push "$CI_REGISTRY_IMAGE:latest"
+
+Push tag:
+  stage: deploy
+  variables:
+    GIT_STRATEGY: none
+  only:
+    - tags
+  image: docker:stable
+  services:
+    - name: $CI_REGISTRY/ucs/docker:dind
+      alias: docker
+  tags:
+    - docker
+  script:
+    - docker pull "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+    - docker tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA" "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME"
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME"
+
+pages:
+  stage: deploy
+  variables:
+    GIT_STRATEGY: none
+  only:
+    - master
+  dependencies:
+    - test
+  script:
+    - ':'
+  artifacts:
+    paths:
+      - public
+    expire_in: 30 days
