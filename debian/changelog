@@ -1,3 +1,9 @@
+vnc-automate (0.0.2-3) unstable; urgency=medium
+
+  * Bug #52881: pre-compile segment_line, dont use pyximportcpp
+
+ -- Felix Botner <botner@univention.de>  Thu, 11 Mar 2021 16:21:45 +0100
+
 vnc-automate (0.0.2-2) unstable; urgency=medium
 
   * Bug #28497: migrate to dh_python

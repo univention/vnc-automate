@@ -1,0 +1,69 @@
+stages:
+  # TODO tests
+  - debian
+  - docker
+
+variables:
+  LANG: "C.UTF-8"
+  DEBIAN_FRONTEND: noninteractive
+  CI_REGISTRY: docker-registry.knut.univention.de
+  CI_REGISTRY_IMAGE: $CI_REGISTRY/ucs-vnc-tools
+  IMAGE_DEV: $CI_REGISTRY/ucs-ec2-tools
+  IMAGE_SSH: $CI_REGISTRY/knut/ssh
+  DOCKER_HOST: tcp://docker:2375/
+  DOCKER_DRIVER: overlay2
+
+test:
+  stage: test
+  image: $IMAGE_DEV
+  cache:
+    paths:
+      - .tox
+      - .mypy_cache
+      - .pytest_cache
+  before_script:
+    - apt-get update
+    - mkdir -p /var/log/apt/
+    - apt-get -qq install tox python
+  script:
+    - tox
+  coverage: '/^TOTAL\s+\d+\s+\d+\s+(\d+\%)$/'
+  artifacts:
+    reports:
+      cobertura: coverage.xml
+      junit: pytest.xml
+    paths:
+      - public
+    expire_in: 1 day
+
+debian:
+  stage: debian
+  interruptible: true
+  image: $IMAGE_DEV
+  before_script:
+    - apt-get update
+    - mkdir -p /var/log/apt/
+    - apt-get -qq build-dep .
+  script:
+    - dpkg-buildpackage --no-sign
+    - mkdir -p artifacts
+    - mv -t artifacts/ ../*.deb
+  artifacts:
+    paths:
+      - artifacts/
+    expire_in: 1 day
+
+docker:
+  stage: docker
+  interruptible: true
+  image: $CI_REGISTRY/docker:stable
+  dependencies:
+    - debian
+  script:
+    - >
+      docker build
+      --pull
+      -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+      -f Dockerfile
+      artifacts
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"

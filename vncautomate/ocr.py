@@ -45,11 +45,8 @@ from tempfile import mktemp
 from twisted.internet import reactor
 from twisted.internet.protocol import ProcessProtocol
 from twisted.internet.defer import gatherResults, Deferred
-import pyximportcpp
-import segment_line
+from . import segment_line
 from .config import OCRConfig
-
-pyximportcpp._pass()
 
 
 def img_from_np(ar):

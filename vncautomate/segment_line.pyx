@@ -28,7 +28,8 @@
 # License with the Debian GNU/Linux or Univention distribution in file
 # /usr/share/common-licenses/AGPL-3; if not, see
 # <http://www.gnu.org/licenses/>.
-#
+
+# distutils: language=c++
 
 import numpy as np
 import logging
