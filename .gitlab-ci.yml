@@ -10,7 +10,6 @@ variables:
   CI_REGISTRY: docker-registry.knut.univention.de
   CI_REGISTRY_IMAGE: $CI_REGISTRY/ucs-vnc-tools
   IMAGE_DEV: $CI_REGISTRY/ucs-ec2-tools
-  IMAGE_SSH: $CI_REGISTRY/knut/ssh
   DOCKER_HOST: tcp://docker:2375/
   DOCKER_DRIVER: overlay2
 
@@ -88,3 +87,20 @@ push-latest:
     - docker pull "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
     - docker tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA" "$CI_REGISTRY_IMAGE:latest"
     - docker push "$CI_REGISTRY_IMAGE:latest"
+
+push-tag:
+  stage: deploy
+  variables:
+    GIT_STRATEGY: none
+  only:
+    - tags
+  image: $CI_REGISTRY/docker:stable
+  services:
+    - name: $CI_REGISTRY/ucs/docker:dind
+      alias: docker
+  tags:
+    - docker
+  script:
+    - docker pull "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+    - docker tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA" "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME"
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME"
