@@ -13,28 +13,28 @@ variables:
   DOCKER_HOST: tcp://docker:2375/
   DOCKER_DRIVER: overlay2
 
-test:
-  stage: test
-  image: $IMAGE_DEV
-  cache:
-    paths:
-      - .tox
-      - .mypy_cache
-      - .pytest_cache
-  before_script:
-    - apt-get update
-    - mkdir -p /var/log/apt/
-    - apt-get -qq install tox python
-  script:
-    - tox
-  coverage: '/^TOTAL\s+\d+\s+\d+\s+(\d+\%)$/'
-  artifacts:
-    reports:
-      cobertura: coverage.xml
-      junit: pytest.xml
-    paths:
-      - public
-    expire_in: 1 day
+#test:
+#  stage: test
+#  image: $IMAGE_DEV
+#  cache:
+#    paths:
+#      - .tox
+#      - .mypy_cache
+#      - .pytest_cache
+#  before_script:
+#    - apt-get update
+#    - mkdir -p /var/log/apt/
+#    - apt-get -qq install tox python
+#  script:
+#    - tox
+#  coverage: '/^TOTAL\s+\d+\s+\d+\s+(\d+\%)$/'
+#  artifacts:
+#    reports:
+#      cobertura: coverage.xml
+#      junit: pytest.xml
+#    paths:
+#      - public
+#    expire_in: 1 day
 
 debian:
   stage: debian
