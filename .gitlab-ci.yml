@@ -2,6 +2,7 @@ stages:
   # TODO tests
   - debian
   - docker
+  - deploy
 
 variables:
   LANG: "C.UTF-8"
@@ -59,6 +60,9 @@ docker:
   image: $CI_REGISTRY/docker:stable
   dependencies:
     - debian
+  services:
+    - name: $CI_REGISTRY/ucs/docker:dind
+      alias: docker
   script:
     - >
       docker build
@@ -67,3 +71,20 @@ docker:
       -f Dockerfile
       artifacts
     - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+
+push-latest:
+  stage: deploy
+  variables:
+    GIT_STRATEGY: none
+  only:
+    - master
+  image: $CI_REGISTRY/docker:stable
+  services:
+    - name: $CI_REGISTRY/ucs/docker:dind
+      alias: docker
+  tags:
+    - docker
+  script:
+    - docker pull "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+    - docker tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA" "$CI_REGISTRY_IMAGE:latest"
+    - docker push "$CI_REGISTRY_IMAGE:latest"
