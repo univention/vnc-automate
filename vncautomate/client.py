@@ -41,6 +41,7 @@ from twisted.internet import reactor
 from twisted.internet.defer import Deferred
 from twisted.internet.task import deferLater
 from vncdotool.client import VNCDoToolClient
+from time import sleep
 import logging
 
 
@@ -179,6 +180,7 @@ class VNCAutomateClient(VNCDoToolClient):
 		if log:
 			logging.info('enterKeys(%s)', keys)
 		if len(keys):
+			sleep(0.5)
 			ikey = keys[0]
 			ikey = ikey.replace(' ', 'space')
 			self.keyPress(ikey)
