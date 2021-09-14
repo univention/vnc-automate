@@ -53,15 +53,20 @@ debian:
       - artifacts/
     expire_in: 1 day
 
-docker:
-  stage: docker
-  interruptible: true
+.docker:
   image: $CI_REGISTRY/docker:stable
-  dependencies:
-    - debian
   services:
     - name: $CI_REGISTRY/ucs/docker:dind
       alias: docker
+  tags:
+    - docker
+
+docker:
+  stage: docker
+  interruptible: true
+  extends: .docker
+  dependencies:
+    - debian
   script:
     - >
       docker build
@@ -77,16 +82,12 @@ push-latest:
     GIT_STRATEGY: none
   only:
     - master
-  image: $CI_REGISTRY/docker:stable
-  services:
-    - name: $CI_REGISTRY/ucs/docker:dind
-      alias: docker
-  tags:
-    - docker
+  extends: .docker
   script:
     - docker pull "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
     - docker tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA" "$CI_REGISTRY_IMAGE:latest"
     - docker push "$CI_REGISTRY_IMAGE:latest"
+    - docker rmi "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
 
 push-tag:
   stage: deploy
@@ -94,13 +95,9 @@ push-tag:
     GIT_STRATEGY: none
   only:
     - tags
-  image: $CI_REGISTRY/docker:stable
-  services:
-    - name: $CI_REGISTRY/ucs/docker:dind
-      alias: docker
-  tags:
-    - docker
+  extends: .docker
   script:
     - docker pull "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
     - docker tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA" "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME"
     - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME"
+    - docker rmi "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
