@@ -25,5 +25,5 @@ docker run --rm -it -w /test -v $HOME/git/ucs/test:/test \
  docker-registry.knut.univention.de/ucs-vnc-tools bash
 
 # now in the container, start an installation on a pre-defined machine
-python utils/installation_test/vnc-install-ucs.py --vnc isala:2 --language deu --role basesystem --fqdn base"
+python utils/installation_test/vnc-install-ucs.py --vnc isala:2 --language deu --role basesystem --fqdn base
 ```
