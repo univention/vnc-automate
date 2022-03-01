@@ -1,5 +1,4 @@
 stages:
-  # TODO tests
   - debian
   - docker
   - deploy
@@ -10,40 +9,15 @@ variables:
   CI_REGISTRY: docker-registry.knut.univention.de
   CI_REGISTRY_IMAGE: $CI_REGISTRY/ucs-vnc-tools
   IMAGE_DEV: $CI_REGISTRY/ucs-ec2-tools
-  DOCKER_HOST: tcp://docker:2375/
-  DOCKER_DRIVER: overlay2
-
-#test:
-#  stage: test
-#  image: $IMAGE_DEV
-#  cache:
-#    paths:
-#      - .tox
-#      - .mypy_cache
-#      - .pytest_cache
-#  before_script:
-#    - apt-get update
-#    - mkdir -p /var/log/apt/
-#    - apt-get -qq install tox python
-#  script:
-#    - tox
-#  coverage: '/^TOTAL\s+\d+\s+\d+\s+(\d+\%)$/'
-#  artifacts:
-#    reports:
-#      cobertura: coverage.xml
-#      junit: pytest.xml
-#    paths:
-#      - public
-#    expire_in: 1 day
 
 debian:
   stage: debian
   interruptible: true
   image: $IMAGE_DEV
   before_script:
-    - apt-get update
-    - mkdir -p /var/log/apt/
-    - apt-get -qq build-dep .
+    - mkdir -p /var/log/apt
+    - apt-get -qq update
+    - apt-get -q --assume-yes build-dep .
   script:
     - dpkg-buildpackage --no-sign
     - mkdir -p artifacts
@@ -60,6 +34,8 @@ debian:
       alias: docker
   tags:
     - docker
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
 
 docker:
   stage: docker
