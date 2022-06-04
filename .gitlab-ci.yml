@@ -1,13 +1,15 @@
+include:
+  - project: univention/dist/docker-services
+    file: kaniko.yml
+
 stages:
   - debian
   - docker
-  - deploy
 
 variables:
   LANG: "C.UTF-8"
   DEBIAN_FRONTEND: noninteractive
   CI_REGISTRY: docker-registry.knut.univention.de
-  CI_REGISTRY_IMAGE: $CI_REGISTRY/ucs-vnc-tools
   IMAGE_DEV: $CI_REGISTRY/ucs-ec2-tools
 
 debian:
@@ -27,53 +29,14 @@ debian:
       - artifacts/
     expire_in: 1 day
 
-.docker:
-  image: $CI_REGISTRY/docker:stable
-  services:
-    - name: $CI_REGISTRY/ucs/docker:dind
-      alias: docker
-  tags:
-    - docker
-  variables:
-    DOCKER_HOST: tcp://docker:2375/
-
 docker:
   stage: docker
   interruptible: true
-  extends: .docker
+  extends: .kaniko_knut
   dependencies:
     - debian
-  script:
-    - >
-      docker build
-      --pull
-      -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
-      -f Dockerfile
-      artifacts
-    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
-
-push-latest:
-  stage: deploy
+  before_script:
+    - cp Dockerfile artifacts/
   variables:
-    GIT_STRATEGY: none
-  only:
-    - master
-  extends: .docker
-  script:
-    - docker pull "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
-    - docker tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA" "$CI_REGISTRY_IMAGE:latest"
-    - docker push "$CI_REGISTRY_IMAGE:latest"
-    - docker rmi "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
-
-push-tag:
-  stage: deploy
-  variables:
-    GIT_STRATEGY: none
-  only:
-    - tags
-  extends: .docker
-  script:
-    - docker pull "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
-    - docker tag "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA" "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME"
-    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME"
-    - docker rmi "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHA"
+    KANIKO_BUILD_CONTEXT: artifacts
+    CI_REGISTRY_IMAGE: $CI_REGISTRY/ucs-vnc-tools
