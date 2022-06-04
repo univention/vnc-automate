@@ -2,13 +2,15 @@
 
 programmatic interface for VNC
 
+_[TOC]_
+
 # docker-registry.knut.univention.de/ucs-vnc-tools
 
 Docker image with `vnc-automate` and (pip) vncdotool (univention/dist/vncdotool> is deprecated) based on `docker-registry.knut.univention.de/ucs-ec2-tools`.
 
 # Pipeline
 
-The pipeline builds the `vnc-automate package` from the source, creates the docker images and pushes the image to `docker-registry.knut.univention.de` (for the main branch with tha latest tag)
+The pipeline builds the `vnc-automate package` from the source, creates the docker images and pushes the image to `docker-registry.knut.univention.de` (for the main branch with the latest tag)
 
 # Usage
 
