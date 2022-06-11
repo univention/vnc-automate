@@ -9,6 +9,26 @@ variables:
   CI_REGISTRY: docker-registry.knut.univention.de
   IMAGE_DEV: $CI_REGISTRY/ucs-ec2-tools
 
+tox:
+  image: $CI_REGISTRY/phahn/ucs-devbase:449
+  cache:
+    paths:
+      - .tox
+  before_script:
+    - apt-get -q --assume-yes build-dep .
+    - apt-get -q --assume-yes install tox
+  script:
+    - tox
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+      junit: pytest.xml
+    paths:
+      - public/
+    expire_in: 1 day
+
 debian:
   interruptible: true
   image: $IMAGE_DEV

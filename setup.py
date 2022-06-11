@@ -5,7 +5,7 @@ setup(
     ext_modules=[
         Extension(
             "vncautomate.segment_line",
-            sources=["vncautomate/segment_line.pyx"],
+            sources=["src/vncautomate/segment_line.pyx"],
             language="c++",
         ),
     ],

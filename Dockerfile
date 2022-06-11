@@ -3,7 +3,7 @@ ENV LANG C.UTF-8
 COPY ["python*-vnc-automate_*.deb", "/"]
 RUN apt-get -qq update \
     && mkdir -p /var/log/apt/ \
-    && apt-get -q --assume-yes -f install --no-install-recommends /python*-vnc-automate_*.deb vncsnapshot \
+    && apt-get -q --assume-yes -f install /python*-vnc-automate_*.deb vncsnapshot \
     && apt-get -q --assume-yes install --no-install-recommends \
         python3-pil \
         python3-pip \

@@ -11,3 +11,6 @@ debian/*.debhelper
 debian/python-vnc-automate/
 debian/python3-vnc-automate/
 debian/tmp/
+coverage.xml
+pytest.xml
+public/

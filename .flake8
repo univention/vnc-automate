@@ -1,0 +1,16 @@
+[flake8]
+max-line-length = 220
+ignore =
+    # W191 indentation contains tabs
+    W191,
+    # E265 block comment should start with '# '
+    E265,
+    # E117 over-indented
+    E117,
+exclude =
+    .git,
+    .tox,
+    .mypy_cache,
+    __pycache__,
+    build,
+    dist,
