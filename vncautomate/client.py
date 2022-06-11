@@ -33,8 +33,8 @@
 
 from __future__ import division
 
-from time import time
 import logging
+from time import time
 
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred

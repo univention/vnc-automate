@@ -31,14 +31,13 @@
 # <http://www.gnu.org/licenses/>.
 #
 
-import sys
 import logging
+import sys
 
 from vncdotool import api
 from vncdotool.client import VNCDoToolFactory
 
 from .client import VNCAutomateClient
-
 
 # force vncdotool to use the VNCAutomateClient class
 VNCDoToolFactory.protocol = VNCAutomateClient

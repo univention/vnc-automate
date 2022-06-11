@@ -32,11 +32,12 @@
 # <http://www.gnu.org/licenses/>.
 
 
-import numpy as np
 import logging
+
+import numpy as np
+
 cimport numpy as np
 from libcpp.vector cimport vector
-
 
 FLOAT = np.float32
 ctypedef np.float32_t FLOAT_t

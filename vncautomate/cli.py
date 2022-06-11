@@ -31,16 +31,16 @@
 # <http://www.gnu.org/licenses/>.
 #
 
-import os
-import logging
 import argparse
+import logging
+import os
 
 from PIL import Image
 from twisted.internet import reactor
 from twisted.internet.threads import deferToThread
 
-from .config import OCRConfig
 from . import VNCConnection, init_logger
+from .config import OCRConfig
 from .ocr import OCRAlgorithm
 
 

@@ -1,17 +1,16 @@
 # coding: utf-8
 from __future__ import absolute_import
 
-import unittest
 import logging
+import unittest
 from os.path import dirname, join
 
-from PIL import Image
 import numpy as np
+from PIL import Image
 
-from vncautomate import init_logger
+from vncautomate import init_logger, segment_line  # type: ignore
 from vncautomate.config import OCRConfig
 from vncautomate.ocr import OCRAlgorithm
-from vncautomate import segment_line
 
 
 def np_from_img(im):

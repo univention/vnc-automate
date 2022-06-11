@@ -31,24 +31,23 @@
 # <http://www.gnu.org/licenses/>.
 #
 
-from __future__ import absolute_import
-from __future__ import division
+from __future__ import absolute_import, division
 
-import os
 import difflib
-import re
 import logging
+import os
+import re
 from datetime import datetime
 from tempfile import gettempdir
 
 import lxml.etree as ET
-from PIL import Image, ImageDraw, ImageOps
 import numpy as np
+from PIL import Image, ImageDraw, ImageOps
 from scipy.signal import sepfir2d
 from twisted.internet import utils
-from twisted.internet.defer import gatherResults, Deferred
+from twisted.internet.defer import Deferred, gatherResults
 
-from . import segment_line
+from . import segment_line  # type: ignore
 from .config import OCRConfig
 
 KEEP_TMP = os.getenv('VNCAUTOMATE_TMP', '')
