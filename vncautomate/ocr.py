@@ -122,7 +122,7 @@ class OCRAlgorithm(object):
 			# OCRConfig instance has been passed as parameter
 			self.config = args[0]
 		elif kwargs:
-			# a key-value pairs have been passed as parameter
+			# key-value pairs have been passed as parameter
 			self.config = OCRConfig(**kwargs)
 		else:
 			# nothing has been passed ... use all default values

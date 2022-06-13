@@ -63,8 +63,8 @@ class VNCAutomateClient(VNCDoToolClient):
 			# OCRConfig instance has been passed as parameter
 			self.ocr_algo.config = args[0]
 		elif kwargs:
-			# a key-value pairs have been passed as parameter
-			self.ocr_algo.config.update(kwargs)
+			# key-value pairs have been passed as parameter
+			self.ocr_algo.config.update(**kwargs)
 		return self
 
 	def _find_text(self, text, timeout=-1, defer=1e-2, start_time=-1, prevent_screen_saver=False):

@@ -46,15 +46,19 @@ from .ocr import OCRAlgorithm
 
 def add_config_options_to_parser(parser):
 	# add all config options from OCRConfig to the parser
-	for name, member in OCRConfig.get_attrs():
-		flag_name = '--%s' % name.replace('_', '-')
-		help = member.__doc__
-		if member.default:
-			help += ' (default=%s)' % member.default
-		metavar = name.upper()
-		if name.startswith('dump_'):
-			metavar = 'IMG_PATH'
-		parser.add_argument(flag_name, dest=name, default=member.default, help=help, metavar=metavar, type=member.type)
+	for name in dir(OCRConfig):
+		if name.startswith("_"):
+			continue
+		default = getattr(OCRConfig, name)
+		if isinstance(default, (float, int, str)):
+			parser.add_argument(
+				"--%s" % (name.replace("_", "-")),
+				default=default,
+				type=type(default),
+				help=getattr(OCRConfig, "_" + name),
+				metavar="IMG_PATH" if name.startswith("dump_") else name.upper(),
+				dest=name,
+			)
 
 
 def get_parser():
