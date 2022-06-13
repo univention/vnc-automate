@@ -33,9 +33,11 @@
 
 import logging
 import sys
+from types import TracebackType  # noqa: F401
+from typing import Optional, Type  # noqa: F401
 
 from vncdotool import api
-from vncdotool.client import VNCDoToolFactory
+from vncdotool.client import VNCDoToolFactory  # noqa: F401
 
 from .client import VNCAutomateClient
 
@@ -44,6 +46,7 @@ VNCDoToolFactory.protocol = VNCAutomateClient
 
 
 def init_logger(debug_level='info'):
+	# type: (str) -> None
 	try:
 		# adjust logging config
 		logging.basicConfig(
@@ -57,6 +60,7 @@ def init_logger(debug_level='info'):
 
 
 def connect_vnc(host):
+	# type: (str) -> VNCAutomateClient
 	log = logging.getLogger(__name__)
 	log.info('Connecting to VNC host %s', host)
 	client = api.connect(host)
@@ -66,19 +70,24 @@ def connect_vnc(host):
 
 
 def disconnect_vnc():
+	# type: () -> None
 	api.shutdown()
 
 
 class VNCConnection(object):
 
 	def __init__(self, host, dump_img=None):
+		# type: (str, Optional[str]) -> None
 		self.host = host
 
 	def reconnect(self):
+		# type: () -> VNCAutomateClient
 		return connect_vnc(self.host)
 
 	def __enter__(self):
+		# type: () -> VNCAutomateClient
 		return connect_vnc(self.host)
 
 	def __exit__(self, type, value, traceback):
+		# type: (Optional[Type[Exception]], Optional[Exception], Optional[TracebackType]) -> None
 		disconnect_vnc()

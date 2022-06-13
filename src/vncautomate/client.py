@@ -35,6 +35,7 @@ from __future__ import division
 
 import logging
 from time import time
+from typing import Optional, Sequence, Tuple  # noqa: F401
 
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred
@@ -51,14 +52,14 @@ class VNCAutomateException(ValueError):
 
 class VNCAutomateClient(VNCDoToolClient):
 
-	ocr_algo = None
-
 	def __init__(self):
+		# type: () -> None
 		VNCDoToolClient.__init__(self)
 		self.ocr_algo = OCRAlgorithm()
 		self.log = logging.getLogger(__name__)
 
 	def updateOCRConfig(self, *args, **kwargs):
+		# type: (*OCRConfig, **str) -> VNCAutomateClient
 		if len(args) == 1 and isinstance(args[0], OCRConfig):
 			# OCRConfig instance has been passed as parameter
 			self.ocr_algo.config = args[0]
@@ -68,10 +69,12 @@ class VNCAutomateClient(VNCDoToolClient):
 		return self
 
 	def _find_text(self, text, timeout=-1, defer=1e-2, start_time=-1, prevent_screen_saver=False):
+		# type: (str, int, float, float, bool) -> Deferred
 		if start_time < 0:
 			start_time = time()
 
 		def _check_timeout(click_point):
+			# type: (Optional[Tuple[int, int]]) -> Optional[Tuple[int, int]]
 			duration = time() - start_time
 			if click_point is not None:
 				# done, we found the text :)
@@ -97,6 +100,7 @@ class VNCAutomateClient(VNCDoToolClient):
 		return self.deferred
 
 	def mouseClickOnText(self, text, timeout=30, defer=1e-2):
+		# type: (str, int, float) -> Deferred
 		self.log.info('mouseClickOnText("%s", timeout=%.1f, defer=%.2f)', text, timeout, defer)
 		deferred = self._find_text(text, defer=defer).addTimeout(timeout, reactor)
 		deferred.addCallback(lambda pos: self.mouseMove(*pos))
@@ -105,12 +109,14 @@ class VNCAutomateClient(VNCDoToolClient):
 		return deferred
 
 	def waitForText(self, text, timeout=30, defer=1e-2, prevent_screen_saver=False):
+		# type: (str, int, float, bool) -> Deferred
 		self.log.info('waitForText("%s", timeout=%.1f, defer=%.2f)', text, timeout, defer)
 		deferred = self._find_text(text, timeout=timeout, defer=defer, prevent_screen_saver=prevent_screen_saver)
 		deferred.addCallback(lambda _pos: self)  # make sure to return self
 		return deferred
 
 	def enterKeys(self, keys, log=True):
+		# type: (Sequence[str], bool) -> VNCAutomateClient
 		if log:
 			self.log.info('enterKeys(%r)', keys)
 		if not keys:
@@ -125,5 +131,6 @@ class VNCAutomateClient(VNCDoToolClient):
 		return deferLater(reactor, 0.1, self.enterKeys, keys[1:], log=False)
 
 	def enterText(self, text):
+		# type: (str) -> VNCAutomateClient
 		self.log.info('enterText(%r)', text)
 		return self.enterKeys(text, log=False)

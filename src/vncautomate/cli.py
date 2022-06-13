@@ -45,6 +45,7 @@ from .ocr import OCRAlgorithm
 
 
 def add_config_options_to_parser(parser):
+	# type: (argparse.ArgumentParser) -> None
 	# add all config options from OCRConfig to the parser
 	for name in dir(OCRConfig):
 		if name.startswith("_"):
@@ -62,6 +63,7 @@ def add_config_options_to_parser(parser):
 
 
 def get_parser():
+	# type: () -> argparse.ArgumentParser
 	parser = argparse.ArgumentParser(description='Automation tool for VNC sessions using on OCR.')
 	parser.add_argument('host', metavar='vnc_host', help='Host with VNC port to connect to (can also be a file for testing purposes)')
 	parser.add_argument('words', nargs='+', metavar='word', help='Words that will be matched and clicked upon in the VNC session')
@@ -71,16 +73,19 @@ def get_parser():
 
 
 def parse_args():
+	# type: () -> argparse.Namespace
 	# parse arguments and create OCRConfig instance
 	parser = get_parser()
 	return parser.parse_args()
 
 
 def get_config_from_args(args):
+	# type: (argparse.Namespace) -> OCRConfig
 	return OCRConfig(**args.__dict__)
 
 
 def main_vnc(host, words, config):
+	# type: (str, str, OCRConfig) -> None
 	logging.info('Connecting to VNC host %s', host)
 	with VNCConnection(host) as client:
 		client.updateOCRConfig(config)
@@ -88,8 +93,10 @@ def main_vnc(host, words, config):
 
 
 def main_img(img_path, words, config):
+	# type: (str, str, OCRConfig) -> None
 
 	def run_on_img():
+		# type: () -> None
 		logging.info('Loading image %s', img_path)
 		ocr_algo = OCRAlgorithm(config)
 		with Image.open(img_path) as img:
@@ -98,6 +105,7 @@ def main_img(img_path, words, config):
 			deferred.addBoth(lambda _none: reactor.stop())
 
 	def err_handler(err):
+		# type: (Exception) -> None
 		logging.error(err)
 
 	deferToThread(run_on_img).addErrback(err_handler)

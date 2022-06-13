@@ -16,6 +16,7 @@ Build-Depends:
  python-scipy,
  python-setuptools,
  python-twisted,
+ python-typing,
  python3-all-dev,
  python3-debian,
  python3-lxml,

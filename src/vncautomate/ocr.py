@@ -39,6 +39,7 @@ import os
 import re
 from datetime import datetime
 from tempfile import gettempdir
+from typing import Iterable, List, Optional, Sequence, Set, Tuple, Union  # noqa: F401
 
 try:
 	import lxml.etree as ET
@@ -54,36 +55,48 @@ from twisted.internet.defer import Deferred, gatherResults
 from . import segment_line  # type: ignore
 from .config import OCRConfig
 
+P2D = Tuple[int, int]
+BBox = Tuple[int, int, int, int]
+
 KEEP_TMP = os.getenv('VNCAUTOMATE_TMP', '')
 
 
 def img_from_np(ar):
+	# type: (np.array) -> Image
 	return Image.fromarray(ar.round().astype(np.uint8))
 
 
 def np_from_img(im):
+	# type: (Image) -> np.array
 	return np.asarray(im, dtype=np.float32)
 
 
 class _OCRWord(object):
 
 	def __init__(self, word, bbox):
+		# type: (str, np.array) -> None
 		self.word = word or ''
 		self.bbox = bbox
 
 	def resize(self, resize):
+		# type: (float) -> None
 		self.bbox = self.bbox * resize
 
 	def offset(self, offset):
+		# type: (Tuple[int, int]) -> None
 		self.bbox = np.concatenate([offset, offset]) + self.bbox
 
 	def fuzzy_match(self, another_string):
+		# type: (str) -> float
+		assert type(self.word) is type(another_string), (type(self.word), repr(self.word), type(another_string), repr(another_string))
 		return difflib.SequenceMatcher(None, self.word.lower(), another_string.lower()).ratio()
 
 	def __str__(self):
+		# type: () -> str
 		return '%r@%s' % (self.word, self.bbox)
 
 	def __repr__(self):
+		# type: () -> str
 		return "%s(%r, %r)" % (self.__class__.__name__, self.word, self.bbox)
 
 
@@ -92,6 +105,7 @@ class OCRAlgorithm(object):
 	RE_BBOX = re.compile(r'\bbbox ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+)\b')
 
 	def __init__(self, *args, **kwargs):
+		# type: (*OCRConfig, **str) -> None
 		self.log = logging.getLogger(__name__)
 		if len(args) == 1 and isinstance(args[0], OCRConfig):
 			# OCRConfig instance has been passed as parameter
@@ -104,9 +118,10 @@ class OCRAlgorithm(object):
 			self.config = OCRConfig()
 
 	def detect_edges(self, img):
+		# type: (Image) -> Tuple[np.array, np.array]
 		self.log.debug('Detecting horizontal and vertical edges in screen')
 		mat = np_from_img(img)
-		gradient_kernel = (0, 1, 0, -1, 0)
+		gradient_kernel = np.array((0, 1, 0, -1, 0), dtype="float32")
 		smoothing_kernel = np.ones((7), dtype='float32')
 
 		vertical_edges = sepfir2d(mat, gradient_kernel, smoothing_kernel) / 7
@@ -127,9 +142,11 @@ class OCRAlgorithm(object):
 		return horizontal_edges, vertical_edges
 
 	def segment_line(self, _x, _y, label, edges, line_segments):
+		# type: (int, int, int, np.array, np.array) -> List[P2D]
+		# UNUSED in favor of segment_line.pyx
 		self.log.debug('Seeding line pixel segmentation at (%s, %s)', _x, _y)
-		line_pixels = []
-		stack = [(_x, _y)]
+		line_pixels = []  # type: List[P2D]
+		stack = [(_x, _y)]  # type: List[P2D]
 		while stack:
 			x, y = stack.pop(0)
 			if x < 0 or y < 0 or x >= edges.shape[1] or y >= edges.shape[0]:
@@ -149,8 +166,10 @@ class OCRAlgorithm(object):
 
 		return line_pixels
 
-	def line_from_pixels(self, line_pixels):
-		line_pixels = np.array(line_pixels)
+	def line_from_pixels(self, pixels):
+		# type: (Iterable[P2D]) -> BBox
+		# UNUSED in favor of segment_line.pyx
+		line_pixels = np.array(pixels)
 		mean = line_pixels.mean(0)
 		line_min = line_pixels.min(0)
 		line_max = line_pixels.max(0)
@@ -176,8 +195,10 @@ class OCRAlgorithm(object):
 		return line
 
 	def find_lines(self, edges, line_segments):
+		# type: (np.array, np.array) -> List[BBox]
+		# UNUSED in favor of segment_line.pyx
 		self.log.debug('Detecting line segments in image...')
-		lines = []
+		lines = []  # type: List[BBox]
 		it = np.nditer(edges, flags=["multi_index"])
 		for edge in it:
 			y, x = it.multi_index
@@ -195,20 +216,24 @@ class OCRAlgorithm(object):
 		return lines
 
 	def match_line_in_neighborhood(self, _x, _y, _label, lines, line_segments):
+		# type: (float, float, int, Sequence[BBox], np.array) -> Tuple[Optional[BBox], int]
 		_x = int(round(_x))
 		_y = int(round(_y))
-		matches = set()
+		matches = set()  # type: Set[int]
 		self.log.debug('Find neighboring lines at (%s, %s)', _x, _y)
 
 		def _test_label(x, y):
+			# type: (int, int) -> Optional[int]
 			if x < 0 or y < 0 or x >= line_segments.shape[1] or y >= line_segments.shape[0]:
 				# point outside image -> return default empty label
 				return -1
 			label = line_segments[y, x]
 			if 0 <= label != _label:
 				matches.add(label)
+			return None
 
 		def _dist_square(line):
+			# type: (BBox) -> float
 			results = [
 				(line[0] - _x) ** 2 + (line[1] - _y) ** 2,
 				(line[2] - _x) ** 2 + (line[3] - _y) ** 2,
@@ -253,20 +278,23 @@ class OCRAlgorithm(object):
 		return None, best_match
 
 	def prune_small_boxes(self, boxes):
+		# type: (Sequence[BBox]) -> List[BBox]
 		new_boxes = [ibox for ibox in boxes if (ibox[2] - ibox[0]) > self.config.box_min_width and (ibox[3] - ibox[1]) > self.config.box_min_height]
 		self.log.debug('Pruning %s boxes that are too small', len(boxes) - len(new_boxes))
 		return new_boxes
 
 	def prune_large_boxes(self, boxes):
+		# type: (Sequence[BBox]) -> List[BBox]
 		new_boxes = [ibox for ibox in boxes if (ibox[3] - ibox[1]) < self.config.box_max_height]
 		self.log.debug('Pruning %s boxes that are too large', len(boxes) - len(new_boxes))
 		return new_boxes
 
 	def detect_boxes(self, horizontal_lines, vertical_lines, horizontal_line_segments, vertical_line_segments):
+		# type: (Sequence[BBox], Sequence[BBox], np.array, np.array) -> List[BBox]
 		# iterate over all horizontal lines and try create
 		# a rectangle starting from the top left corner
 		self.log.debug('Detecting boxes in image given the detected lines')
-		boxes = []
+		boxes = []  # type: List[BBox]
 		for itop, top in enumerate(horizontal_lines):
 			left, ileft = self.match_line_in_neighborhood(top[0], top[1], itop, vertical_lines, vertical_line_segments)
 			if left is None:
@@ -288,6 +316,7 @@ class OCRAlgorithm(object):
 		return boxes
 
 	def draw_lines_and_boxes(self, horizontal_lines, vertical_lines, boxes, size):
+		# type: (Iterable[BBox], Iterable[BBox], Iterable[BBox], Tuple[int, int]) -> Image
 		self.log.debug('Drawing detected lines and boxes')
 		img_result = Image.new("RGB", size, 'white')
 		draw = ImageDraw.Draw(img_result)
@@ -300,6 +329,7 @@ class OCRAlgorithm(object):
 		return img_result
 
 	def get_words_from_hocr(self, xml_data):
+		# type: (bytes) -> List[List[_OCRWord]]
 		self.log.debug('Parsing words from XML OCR data')
 		try:
 			xml = ET.fromstring(xml_data, parser=ET.XMLParser())
@@ -308,7 +338,7 @@ class OCRAlgorithm(object):
 			self.log.warn('XML output from tesseract is malformed: %s', err)
 			return []
 
-		words = []
+		words = []  # type: List[List[_OCRWord]]
 		for line in xml.findall(".//{http://www.w3.org/1999/xhtml}span[@class='ocr_line']"):
 			words_in_line = []
 			for word in line:
@@ -335,6 +365,7 @@ class OCRAlgorithm(object):
 		return words
 
 	def ocr_img(self, _img, box):
+		# type: (Image, Optional[BBox]) -> Deferred
 		if box:
 			self.log.debug('Performing OCR on VNC screen in area %s and with resizing %s', box, self.config.img_resize)
 		else:
@@ -354,6 +385,7 @@ class OCRAlgorithm(object):
 		processDeferred = Deferred()
 
 		def _process_output(val):
+			# type: (int) -> None
 			# read OCR output from temp file
 			with open(hocr_file_path, 'rb') as hocr_file:
 				hocr_data = hocr_file.read()
@@ -392,14 +424,15 @@ class OCRAlgorithm(object):
 		return processDeferred
 
 	def mean_point_of_boxes(self, boxes):
-		points = []
+		# type: (Iterable[np.array]) -> np.array
+		points = []  # type: List[np.array]
 		for ibox in boxes:
 			points.append(ibox[0:2])
 			points.append(ibox[2:4])
-		points = np.array(points)
-		return points.mean(0)
+		return np.array(points).mean(0).astype(int)
 
 	def boxes_from_image(self, img):
+		# type: (Image) -> List[BBox]
 		horizontal_edges, vertical_edges = self.detect_edges(img)
 		mat_shape = tuple(reversed(img.size))
 		vertical_line_segments = -np.ones(mat_shape, dtype='int64')
@@ -417,12 +450,13 @@ class OCRAlgorithm(object):
 		return boxes
 
 	def find_best_matching_words(self, all_words, pattern):
-		best_match = (self.config.min_str_match_score, None)
+		# type: (Iterable[Sequence[_OCRWord]], Sequence[str]) -> Tuple[float, Optional[List[_OCRWord]]]
+		best_match = (self.config.min_str_match_score, None)  # type: Tuple[float, Optional[List[_OCRWord]]]
 		for line in all_words:
 			for iword, word in enumerate(line):
 				self.log.debug('Matching word: %s', word)
 				scores = np.zeros(len(pattern))
-				words = []
+				words = []  # type: List[_OCRWord]
 				for i, pat in enumerate(pattern):
 					if i + iword >= len(line):
 						break
@@ -444,6 +478,7 @@ class OCRAlgorithm(object):
 		return best_match
 
 	def find_text_in_image(self, img, pattern):
+		# type: (Image, Union[str, List[str]]) -> Deferred
 		if self.config.dump_dir:
 			img_path = os.path.join(self.config.dump_dir, 'vnc_automate_%s.png' % datetime.now().isoformat())
 			img.save(img_path)
@@ -468,14 +503,15 @@ class OCRAlgorithm(object):
 
 		boxes = self.boxes_from_image(img)
 
-		deferreds = []
-		for box in [None] + boxes:
+		deferreds = []  # type: List[Deferred]
+		for box in [None] + boxes:  # type: ignore
 			deferred = self.ocr_img(img, box)
 			deferred.addCallback(self.find_best_matching_words, pattern)
 			deferreds.append(deferred)
 
 		def _process_matches(matches):
-			best_match = (self.config.min_str_match_score, None)
+			# type: (Sequence[Tuple[float, Sequence[_OCRWord]]]) -> Optional[np.array]
+			best_match = (self.config.min_str_match_score, None)  # type: Tuple[float, Optional[List[_OCRWord]]]
 			for match in matches:
 				if match > best_match:
 					best_match = match
