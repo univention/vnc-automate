@@ -37,7 +37,6 @@ from __future__ import division
 import os
 import difflib
 import re
-import time
 import logging
 from datetime import datetime
 from tempfile import gettempdir
@@ -46,8 +45,7 @@ import lxml.etree as ET
 from PIL import Image, ImageDraw, ImageOps
 import numpy as np
 from scipy.signal import sepfir2d
-from twisted.internet import reactor
-from twisted.internet.protocol import ProcessProtocol
+from twisted.internet import utils
 from twisted.internet.defer import gatherResults, Deferred
 
 from . import segment_line
@@ -84,34 +82,6 @@ class _OCRWord(object):
 
 	def __repr__(self):
 		return "%s(%r, %r)" % (self.__class__.__name__, self.word, self.bbox)
-
-
-class _ReadStdinProcessProtocol(ProcessProtocol):
-
-	def __init__(self, callback, cmd):
-		self.log = logging.getLogger(__name__)
-		self.callback = callback
-		self.cmd = cmd
-		self.log.debug('Running command: %s', ' '.join(cmd))
-		reactor.spawnProcess(self, cmd[0], cmd, os.environ)
-
-	def connectionMade(self):
-		self.transport.closeStdin()
-
-	def outReceived(self, data):
-		self.log.debug('Received data from tesseract: %d bytes', len(data))
-
-	def errReceived(self, data):
-		self.log.debug('Ignoring received data on stderr: %s', data)
-
-	def outConnectionLost(self):
-		# FIXME: It's unclear what happens here, but without the sleep
-		# processEnded() won't be called.
-		time.sleep(0.5)
-
-	def processEnded(self, reason):
-		self.log.debug('Process terminated: %s -> exit code: %s', self.cmd, reason.value)
-		self.callback()
 
 
 class OCRAlgorithm(object):
@@ -380,12 +350,12 @@ class OCRAlgorithm(object):
 
 		processDeferred = Deferred()
 
-		def _process_output():
+		def _process_output(val):
 			# read OCR output from temp file
 			with open(hocr_file_path, 'rb') as hocr_file:
 				hocr_data = hocr_file.read()
 
-			self.log.debug('Read %d bytes from tesseract', len(hocr_data))
+			self.log.debug('Read %d bytes from tesseract exited with %d', len(hocr_data), val)
 
 			self.log.debug('Removing %r and %r ...', hocr_file_path, img_file_path)
 			if not KEEP_TMP:
@@ -411,9 +381,10 @@ class OCRAlgorithm(object):
 			)
 			processDeferred.callback(words)
 
-		cmd = ['tesseract', img_file_path, out_file_path, '-l', self.config.lang, 'hocr']
+		cmd = ['/usr/bin/tesseract', img_file_path, out_file_path, '-l', self.config.lang, 'hocr']
 		self.log.debug('Running command: %s', ' '.join(cmd))
-		_ReadStdinProcessProtocol(_process_output, cmd)
+		output = utils.getProcessValue(cmd[0], cmd[1:], os.environ)
+		output.addCallback(_process_output)
 
 		return processDeferred
 

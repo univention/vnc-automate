@@ -93,10 +93,9 @@ def main_img(img_path, words, config):
 		logging.info('Loading image %s', img_path)
 		ocr_algo = OCRAlgorithm(config)
 		with Image.open(img_path) as img:
-			click_point = ocr_algo.find_text_in_image(img, words)
-
-		logging.info('Final click point: %s', click_point)
-		reactor.stop()
+			deferred = ocr_algo.find_text_in_image(img, words)
+			deferred.addCallback(lambda click_point: logging.info('Final click point: %s', click_point))
+			deferred.addBoth(lambda _none: reactor.stop())
 
 	def err_handler(err):
 		logging.error(err)
