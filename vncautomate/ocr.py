@@ -85,7 +85,7 @@ class _ReadStdinProcessProtocol(ProcessProtocol):
 		self.log = logging.getLogger(__name__)
 		self.callback = callback
 		self.cmd = cmd
-		self.log.debug('Running command: %s' % ' '.join(cmd))
+		self.log.debug('Running command: %s', ' '.join(cmd))
 		reactor.spawnProcess(self, cmd[0], cmd, os.environ)
 
 	def connectionMade(self):
@@ -103,7 +103,7 @@ class _ReadStdinProcessProtocol(ProcessProtocol):
 		time.sleep(0.5)
 
 	def processEnded(self, reason):
-		self.log.debug('Process terminated: %s -> exit code: %s' % (self.cmd, reason.value.exitCode))
+		self.log.debug('Process terminated: %s -> exit code: %s', self.cmd, reason.value)
 		self.callback()
 
 
@@ -367,7 +367,7 @@ class OCRAlgorithm(object):
 			# read OCR output from temp file
 			hocr_file = open(hocr_file_path + '.hocr')
 			hocr_data = hocr_file.read()
-			self.log.debug('Read %d bytes from tesseract exited with %d', len(hocr_data), val)
+			self.log.debug('Read %d bytes from tesseract', len(hocr_data))
 
 			self.log.debug('Removing %r and %r ...', hocr_file_path, img_file_path)
 			os.unlink(hocr_file_path + '.hocr')
