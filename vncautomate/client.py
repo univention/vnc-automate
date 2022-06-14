@@ -80,10 +80,10 @@ class VNCAutomateClient(VNCDoToolClient):
 			else:
 				# check timeout
 				self.log.debug('Not found %r [%.1f sec]', text, duration)
+				if 0 < timeout <= duration:
+					raise VNCAutomateException('Search for string "%s" in VNC screen timed out after %.1f seconds!' % (text, duration))
 				if prevent_screen_saver:
 					self.keyPress('ctrl')
-				if timeout > 0 and duration >= timeout:
-					raise VNCAutomateException('Search for string "%s" in VNC screen timed out after %.1f seconds!' % (text, duration))
 
 				# ... and return None to try again
 				return None

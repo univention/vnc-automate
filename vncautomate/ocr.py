@@ -154,7 +154,7 @@ class OCRAlgorithm(object):
 
 		variance = line_pixels.var(0)
 		covariance = variance[0] / (variance[1] + 0.0000001)  # avoid division by zero
-		if covariance < self.config.line_segment_min_covariance and covariance > 1.0 / self.config.line_segment_min_covariance:
+		if 1.0 / self.config.line_segment_min_covariance < covariance < self.config.line_segment_min_covariance:
 			# segment is not narrow enough and more blob-like
 			raise ValueError('Segment is no line!')
 
@@ -202,7 +202,7 @@ class OCRAlgorithm(object):
 				# point outside image -> return default empty label
 				return -1
 			label = line_segments[y, x]
-			if label >= 0 and label != _label:
+			if 0 <= label != _label:
 				matches.add(label)
 
 		def _dist_square(line):

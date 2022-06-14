@@ -91,7 +91,7 @@ cdef void line_from_pixels(vector[FLOAT_t] &_line_pixels, FLOAT_t line_segment_m
 	cdef np.ndarray[FLOAT_t, ndim=1] line_max = line_pixels.max(0)
 	cdef np.ndarray[FLOAT_t, ndim=1] variance = line_pixels.var(0)
 	cdef FLOAT_t covariance = variance[0] / (variance[1] + 0.0000001)  # avoid division by zero
-	if covariance < line_segment_min_covariance and covariance > 1.0 / line_segment_min_covariance:
+	if 1.0 / line_segment_min_covariance < covariance < line_segment_min_covariance:
 		# segment is not narrow enough and more blob-like
 		log.debug('  Ignoring line segment: Segment is no line!')
 		for i in range(4): line[i] = 0
