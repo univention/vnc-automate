@@ -470,8 +470,11 @@ class OCRAlgorithm(object):
 
 	def find_text_in_image(self, img, pattern):
 		if self.config.dump_dir:
-			img_path = os.path.join(self.config.dump_dir, 'vnc_automate_%s.png' % datetime.isoformat(datetime.now()))
-			self.save_image(img, img_path)
+			img_path = os.path.join(self.config.dump_dir, 'vnc_automate_%s.png' % datetime.now().isoformat())
+			img.save(img_path)
+
+		if self.config.dump_screen:
+			img.save(self.config.dump_screen)
 
 		self.log.debug('')
 		self.log.debug('==========')
@@ -479,9 +482,6 @@ class OCRAlgorithm(object):
 			# make sure that we got a list of strings as pattern
 			pattern = pattern.split()
 		pattern = [i.lower() for i in pattern]
-
-		if self.config.dump_screen:
-			img.save(self.config.dump_screen)
 
 		# convert image to gray scale
 		img = img.convert('L')
@@ -518,7 +518,3 @@ class OCRAlgorithm(object):
 		results_deferred = gatherResults(deferreds)
 		results_deferred.addCallback(_process_matches)
 		return results_deferred
-
-	def save_image(self, image, path):
-		self.log.info('Dumping image: %s', path)
-		image.save(path)
