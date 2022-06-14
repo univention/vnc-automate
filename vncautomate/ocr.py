@@ -80,10 +80,10 @@ class _OCRWord(object):
 		return difflib.SequenceMatcher(None, self.word.lower(), another_string.lower()).ratio()
 
 	def __str__(self):
-		return (u'[%s - bbox:%s]' % (self.word, self.bbox)).encode('utf-8')
+		return '%r@%s' % (self.word, self.bbox)
 
 	def __repr__(self):
-		return self.__str__()
+		return "%s(%r, %r)" % (self.__class__.__name__, self.word, self.bbox)
 
 
 class _ReadStdinProcessProtocol(ProcessProtocol):
