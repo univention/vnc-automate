@@ -201,9 +201,10 @@ class OCRAlgorithm(object):
 	def find_lines(self, edges, line_segments):
 		self.log.debug('Detecting line segments in image...')
 		lines = []
-		for y in range(edges.shape[0]):
-			for x in range(edges.shape[1]):
-					if edges[y, x] > self.config.line_segment_high_threshold and line_segments[y, x] < 0:
+		it = np.nditer(edges, flags=["multi_index"])
+		for edge in it:
+			y, x = it.multi_index
+			if edge > self.config.line_segment_high_threshold and line_segments[y, x] < 0:
 						try:
 							line_pixels = self.segment_line(x, y, len(lines), edges, line_segments)
 							line = self.line_from_pixels(line_pixels)
