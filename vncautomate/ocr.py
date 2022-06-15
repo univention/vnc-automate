@@ -116,6 +116,8 @@ class _ReadStdinProcessProtocol(ProcessProtocol):
 
 class OCRAlgorithm(object):
 
+	RE_BBOX = re.compile(r'\bbbox ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+)\b')
+
 	def __init__(self, *args, **kwargs):
 		self.log = logging.getLogger(__name__)
 		if len(args) == 1 and isinstance(args[0], OCRConfig):
@@ -333,16 +335,15 @@ class OCRAlgorithm(object):
 			self.log.warn('XML output from tesseract is malformed: %s', err)
 			return []
 
-		re_bbox = re.compile('.*bbox ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+).*')
-
 		words = []
 		for line in xml.xpath('//*[@class="ocr_line"]'):
 			words_in_line = []
 			for word in line:
 				# get the bounding box for the word
-				bbox = re_bbox.match(word.attrib.get('title', ''))
-				if bbox:
-					bbox = np.array([int(i) for i in bbox.groups()])
+				title = word.attrib.get('title', '')
+				match = self.RE_BBOX.search(title)
+				if match:
+					bbox = np.array([int(i) for i in match.groups()])
 				else:
 					bbox = np.zeros(4)
 
