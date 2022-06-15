@@ -1,10 +1,7 @@
 include:
+  - template: 'Workflows/MergeRequest-Pipelines.gitlab-ci.yml'
   - project: univention/dist/docker-services
     file: kaniko.yml
-
-stages:
-  - debian
-  - docker
 
 variables:
   LANG: "C.UTF-8"
@@ -13,7 +10,6 @@ variables:
   IMAGE_DEV: $CI_REGISTRY/ucs-ec2-tools
 
 debian:
-  stage: debian
   interruptible: true
   image: $IMAGE_DEV
   before_script:
@@ -30,11 +26,10 @@ debian:
     expire_in: 1 day
 
 docker:
-  stage: docker
   interruptible: true
   extends: .kaniko_knut
-  dependencies:
-    - debian
+  needs:
+    - job: debian
   before_script:
     - cp Dockerfile artifacts/
   variables:
