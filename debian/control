@@ -39,6 +39,7 @@ Depends:
  ${python:Depends},
  ${shlibs:Depends},
 Recommends:
+ python-lxml,
  tesseract-ocr-deu,
  tesseract-ocr-fra,
  tesseract-ocr-osd,
@@ -59,6 +60,7 @@ Depends:
  ${python3:Depends},
  ${shlibs:Depends},
 Recommends:
+ python3-lxml,
  tesseract-ocr-deu,
  tesseract-ocr-fra,
  tesseract-ocr-osd,

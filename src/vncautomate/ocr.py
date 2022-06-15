@@ -40,7 +40,11 @@ import re
 from datetime import datetime
 from tempfile import gettempdir
 
-import lxml.etree as ET
+try:
+	import lxml.etree as ET
+except ImportError:
+	import xml.etree.ElementTree as ET  # type: ignore
+
 import numpy as np
 from PIL import Image, ImageDraw, ImageOps
 from scipy.signal import sepfir2d
@@ -298,14 +302,14 @@ class OCRAlgorithm(object):
 	def get_words_from_hocr(self, xml_data):
 		self.log.debug('Parsing words from XML OCR data')
 		try:
-			xml = ET.fromstring(xml_data, parser=ET.XMLParser(recover=True))
-		except ET.XMLSyntaxError as err:
+			xml = ET.fromstring(xml_data, parser=ET.XMLParser())
+		except ET.ParseError as err:
 			# return an empty list of words to enable continuation
 			self.log.warn('XML output from tesseract is malformed: %s', err)
 			return []
 
 		words = []
-		for line in xml.xpath('//*[@class="ocr_line"]'):
+		for line in xml.findall(".//{http://www.w3.org/1999/xhtml}span[@class='ocr_line']"):
 			words_in_line = []
 			for word in line:
 				# get the bounding box for the word
@@ -316,9 +320,9 @@ class OCRAlgorithm(object):
 				else:
 					bbox = np.zeros(4)
 
-				if len(word):
+				while len(word):
 					# the word might be packed into an HTML tag such as <strong>
-					word = word.xpath('.//*[not(*)]')[0]
+					word = word[0]
 
 				try:
 					_word = _OCRWord(word.text, bbox)
