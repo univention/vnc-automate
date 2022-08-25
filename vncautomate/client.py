@@ -56,6 +56,7 @@ class VNCAutomateClient(VNCDoToolClient):
 	def __init__(self):
 		VNCDoToolClient.__init__(self)
 		self.ocr_algo = OCRAlgorithm()
+		self.log = logging.getLogger(__name__)
 
 	def updateOCRConfig(self, *args, **kwargs):
 		if len(args) == 1 and isinstance(args[0], OCRConfig):
@@ -67,7 +68,7 @@ class VNCAutomateClient(VNCDoToolClient):
 		return self
 
 	def updateRectangle(self, *args):
-		logging.debug('Frame buffer update for region %s' % (args[:4], ))
+		self.log.debug('Frame buffer update for region %s', args[:4])
 		VNCDoToolClient.updateRectangle(self, *args)
 
 	def saveScreenshot(self, path):
@@ -83,11 +84,11 @@ class VNCAutomateClient(VNCDoToolClient):
 			duration = time() - start_time
 			if click_point is not None:
 				# done, we found the text :)
-				logging.info('Search pattern found [%.1f sec]', duration)
+				self.log.info('Found %r [%.1f sec]', text, duration)
 				return click_point
 			else:
 				# check timeout
-				logging.info('No match for search pattern [%.1f sec]', duration)
+				self.log.debug('Not found %r [%.1f sec]', text, duration)
 				if prevent_screen_saver:
 					self.keyPress('ctrl')
 				if timeout > 0 and duration >= timeout:
@@ -105,22 +106,22 @@ class VNCAutomateClient(VNCDoToolClient):
 		return self.deferred
 
 	def findSubimage(self, subimage_path, timeout=30, defer=1e-2, start_time=-1, min_match=0.9):
-		logging.info('findSubimage("%s", timeout=%.1f, min_match=%.2f)', subimage_path, timeout, min_match)
+		self.log.info('findSubimage("%s", timeout=%.1f, min_match=%.2f)', subimage_path, timeout, min_match)
 
 		subimage = Image.open(subimage_path)
 		if start_time < 0:
 			start_time = time()
 
 		def _check_timeout(match_value, pos):
-			logging.info('_check_timeout: %s %s' % (match_value, pos))
+			self.log.info('_check_timeout: %s %s', match_value, pos)
 			duration = time() - start_time
 			if match_value >= min_match:
 				# Pattern found
-				logging.info('Search pattern found, with a match value of %.2f/1.00 [%.1f sec]', match_value, duration)
+				self.log.info('Search pattern found, with a match value of %.2f/1.00 [%.1f sec]', match_value, duration)
 				return match_value, pos
 			else:
 				# check timeout
-				logging.info('No match for search pattern; match value was %.2f<%.2f [%.1f sec]', match_value, min_match, duration)
+				self.log.info('No match for search pattern; match value was %.2f<%.2f [%.1f sec]', match_value, min_match, duration)
 				if timeout > 0 and duration >= timeout:
 					raise VNCAutomateException('Search for sub-image "%s" in VNC screen timed out after %.1f seconds!' % (subimage_path, duration))
 				# Return None to try again
@@ -153,32 +154,32 @@ class VNCAutomateClient(VNCDoToolClient):
 		best_match_x = normalized_match_matrix.argmax() % normalized_match_matrix.shape[1]
 		best_match_y = normalized_match_matrix.argmax() / normalized_match_matrix.shape[1]
 
-		logging.info('image_match_value: %s %s %s' % (best_match_value, best_match_x, best_match_y))
+		self.log.info('image_match_value: %s %s %s', best_match_value, best_match_x, best_match_y)
 		return best_match_value, (best_match_x, best_match_y)
 
 	def mouseMoveToText(self, text, timeout=30, defer=1e-2, log=True):
 		if log:
-			logging.info('mouseMoveToText("%s", timeout=%.1f, defer=%.2f)', text, timeout, defer)
+			self.log.info('mouseMoveToText("%s", timeout=%.1f, defer=%.2f)', text, timeout, defer)
 		deferred = self._find_text(text, defer=defer, timeout=timeout)
 		deferred.addCallback(lambda pos: self.mouseMove(*pos))
 		return deferred
 
 	def mouseClickOnText(self, text, timeout=30, defer=1e-2):
-		logging.info('mouseClickOnText("%s", timeout=%.1f, defer=%.2f)', text, timeout, defer)
+		self.log.info('mouseClickOnText("%s", timeout=%.1f, defer=%.2f)', text, timeout, defer)
 		deferred = self.mouseMoveToText(text, timeout=timeout, defer=defer, log=False)
 		deferred.addCallback(lambda _client: deferLater(reactor, 0.1, self.mousePress, 1))
 		deferred.addCallback(lambda _client: deferLater(reactor, 0.1, self.mouseMove, 0, 0))
 		return deferred
 
 	def waitForText(self, text, timeout=30, defer=1e-2, prevent_screen_saver=False):
-		logging.info('waitForText("%s", timeout=%.1f, defer=%.2f)', text, timeout, defer)
+		self.log.info('waitForText("%s", timeout=%.1f, defer=%.2f)', text, timeout, defer)
 		deferred = self._find_text(text, timeout=timeout, defer=defer, prevent_screen_saver=prevent_screen_saver)
 		deferred.addCallback(lambda _pos: self)  # make sure to return self
 		return deferred
 
 	def enterKeys(self, keys, log=True):
 		if log:
-			logging.info('enterKeys(%s)', keys)
+			self.log.info('enterKeys(%s)', keys)
 		if len(keys):
 			sleep(0.5)
 			ikey = keys[0]
@@ -188,5 +189,5 @@ class VNCAutomateClient(VNCDoToolClient):
 		return self
 
 	def enterText(self, text):
-		logging.info('enterText("%s")', text)
+		self.log.info('enterText("%s")', text)
 		return self.enterKeys(text, log=False)

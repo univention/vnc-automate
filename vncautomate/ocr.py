@@ -82,19 +82,20 @@ class _OCRWord(object):
 class _ReadStdinProcessProtocol(ProcessProtocol):
 
 	def __init__(self, callback, cmd):
+		self.log = logging.getLogger(__name__)
 		self.callback = callback
 		self.cmd = cmd
-		logging.debug('Running command: %s' % ' '.join(cmd))
+		self.log.debug('Running command: %s' % ' '.join(cmd))
 		reactor.spawnProcess(self, cmd[0], cmd, os.environ)
 
 	def connectionMade(self):
 		self.transport.closeStdin()
 
 	def outReceived(self, data):
-		logging.debug('Received data from tesseract: %d bytes', len(data))
+		self.log.debug('Received data from tesseract: %d bytes', len(data))
 
 	def errReceived(self, data):
-		logging.debug('Ignoring received data on stderr: %s', data)
+		self.log.debug('Ignoring received data on stderr: %s', data)
 
 	def outConnectionLost(self):
 		# FIXME: It's unclear what happens here, but without the sleep
@@ -102,13 +103,14 @@ class _ReadStdinProcessProtocol(ProcessProtocol):
 		time.sleep(0.5)
 
 	def processEnded(self, reason):
-		logging.debug('Process terminated: %s -> exit code: %s' % (self.cmd, reason.value.exitCode))
+		self.log.debug('Process terminated: %s -> exit code: %s' % (self.cmd, reason.value.exitCode))
 		self.callback()
 
 
 class OCRAlgorithm(object):
 
 	def __init__(self, *args, **kwargs):
+		self.log = logging.getLogger(__name__)
 		if len(args) == 1 and isinstance(args[0], OCRConfig):
 			# OCRConfig instance has been passed as parameter
 			self.config = args[0]
@@ -120,7 +122,7 @@ class OCRAlgorithm(object):
 			self.config = OCRConfig()
 
 	def detect_edges(self, img):
-		logging.debug('Detecting horizontal and vertical edges in screen')
+		self.log.debug('Detecting horizontal and vertical edges in screen')
 		mat = np_from_img(img)
 		gradient_kernel = (0, 1, 0, -1, 0)
 		smoothing_kernel = np.ones((7), dtype='float32')
@@ -143,7 +145,7 @@ class OCRAlgorithm(object):
 		return horizontal_edges, vertical_edges
 
 	def segment_line(self, _x, _y, label, edges, line_segments):
-		logging.debug('Seeding line pixel segmentation at (%s, %s)', _x, _y)
+		self.log.debug('Seeding line pixel segmentation at (%s, %s)', _x, _y)
 		line_pixels = []
 		stack = [(_x, _y)]
 		while stack:
@@ -192,7 +194,7 @@ class OCRAlgorithm(object):
 		return line
 
 	def find_lines(self, edges, line_segments):
-		logging.debug('Detecting line segments in image...')
+		self.log.debug('Detecting line segments in image...')
 		lines = []
 		for y in xrange(edges.shape[0]):
 			for x in xrange(edges.shape[1]):
@@ -203,17 +205,17 @@ class OCRAlgorithm(object):
 						except ValueError as exc:
 							# add dummy line in order to match with the segmentation labels
 							line = ((0, 0, 0, 0))
-							logging.debug('  Ignoring line segment: %s', exc)
+							self.log.debug('  Ignoring line segment: %s', exc)
 						lines.append(line)
 
-		logging.debug('%s lines have been segmented in total', len(lines))
+		self.log.debug('%s lines have been segmented in total', len(lines))
 		return lines
 
 	def match_line_in_neighborhood(self, _x, _y, _label, lines, line_segments):
 		_x = int(round(_x))
 		_y = int(round(_y))
 		matches = set()
-		logging.debug('Find neighboring lines at (%s, %s)', _x, _y)
+		self.log.debug('Find neighboring lines at (%s, %s)', _x, _y)
 
 		def _test_label(x, y):
 			if x < 0 or y < 0 or x >= line_segments.shape[1] or y >= line_segments.shape[0]:
@@ -248,30 +250,30 @@ class OCRAlgorithm(object):
 		for ilabel in matches:
 			line = lines[ilabel]
 			dist_square = _dist_square(line)
-			logging.debug('  Line %s matches (squared distance: %s)', ilabel, dist_square)
+			self.log.debug('  Line %s matches (squared distance: %s)', ilabel, dist_square)
 			if dist_square < best_distance_square:
 				best_match = ilabel
 				best_distance_square = dist_square
 
 		if best_match >= 0:
-			logging.debug('Best match: line %s, squared distance: %s', best_match, best_distance_square)
+			self.log.debug('Best match: line %s, squared distance: %s', best_match, best_distance_square)
 			return lines[best_match], best_match
 		return None, best_match
 
 	def prune_small_boxes(self, boxes):
 		new_boxes = [ibox for ibox in boxes if (ibox[2] - ibox[0]) > self.config.box_min_width and (ibox[3] - ibox[1]) > self.config.box_min_height]
-		logging.debug('Pruning %s boxes that are too small', len(boxes) - len(new_boxes))
+		self.log.debug('Pruning %s boxes that are too small', len(boxes) - len(new_boxes))
 		return new_boxes
 
 	def prune_large_boxes(self, boxes):
 		new_boxes = [ibox for ibox in boxes if (ibox[3] - ibox[1]) < self.config.box_max_height]
-		logging.debug('Pruning %s boxes that are too large', len(boxes) - len(new_boxes))
+		self.log.debug('Pruning %s boxes that are too large', len(boxes) - len(new_boxes))
 		return new_boxes
 
 	def detect_boxes(self, horizontal_lines, vertical_lines, horizontal_line_segments, vertical_line_segments):
 		# iterate over all horizontal lines and try create
 		# a rectangle starting from the top left corner
-		logging.debug('Detecting boxes in image given the detected lines')
+		self.log.debug('Detecting boxes in image given the detected lines')
 		boxes = []
 		for itop in xrange(len(horizontal_lines)):
 			top = horizontal_lines[itop]
@@ -285,17 +287,17 @@ class OCRAlgorithm(object):
 			if right is None:
 				continue
 			new_box = (left[0], top[1], right[2], bottom[3])
-			logging.debug('  Detected new box %s', new_box)
+			self.log.debug('  Detected new box %s', new_box)
 			boxes.append(new_box)
 
-		logging.debug('Detected %s box candidates', len(boxes))
+		self.log.debug('Detected %s box candidates', len(boxes))
 		boxes = self.prune_small_boxes(boxes)
 		boxes = self.prune_large_boxes(boxes)
-		logging.debug('Detected %s final boxes', len(boxes))
+		self.log.debug('Detected %s final boxes', len(boxes))
 		return boxes
 
 	def draw_lines_and_boxes(self, horizontal_lines, vertical_lines, boxes, size):
-		logging.debug('Drawing detected lines and boxes')
+		self.log.debug('Drawing detected lines and boxes')
 		img_result = Image.new("RGB", size, 'white')
 		draw = ImageDraw.Draw(img_result)
 		for line in horizontal_lines:
@@ -307,12 +309,12 @@ class OCRAlgorithm(object):
 		return img_result
 
 	def get_words_from_hocr(self, xml_data):
-		logging.debug('Parsing words from XML OCR data')
+		self.log.debug('Parsing words from XML OCR data')
 		try:
 			xml = ET.fromstring(xml_data, parser=ET.XMLParser(recover=True))
 		except ET.XMLSyntaxError as err:
 			# return an empty list of words to enable continuation
-			logging.warn('XML output from tesseract is malformed: %s' % err)
+			self.log.warn('XML output from tesseract is malformed: %s', err)
 			return []
 
 		re_bbox = re.compile('.*bbox ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+).*')
@@ -336,17 +338,17 @@ class OCRAlgorithm(object):
 					_word = _OCRWord(word.text, bbox)
 					words_in_line.append(_word)
 				except UnicodeDecodeError as err:
-					logging.warn('Ignoring wrongly encoded word: %s' % err)
+					self.log.warn('Ignoring wrongly encoded word: %s', err)
 			words.append(words_in_line)
 
-		logging.debug('Found %s words altogether', len(words))
+		self.log.debug('Found %s words altogether', len(words))
 		return words
 
 	def ocr_img(self, _img, box):
 		if box:
-			logging.debug('Performing OCR on VNC screen in area %s and with resizing %s', box, self.config.img_resize)
+			self.log.debug('Performing OCR on VNC screen in area %s and with resizing %s', box, self.config.img_resize)
 		else:
-			logging.debug('Performing OCR on VNC screen with resizing %s', self.config.img_resize)
+			self.log.debug('Performing OCR on VNC screen with resizing %s', self.config.img_resize)
 		img = _img
 		if box:
 			img = _img.crop(box)
@@ -365,9 +367,9 @@ class OCRAlgorithm(object):
 			# read OCR output from temp file
 			hocr_file = open(hocr_file_path + '.hocr')
 			hocr_data = hocr_file.read()
-			logging.debug('Read %d bytes of data from tesseract output', len(hocr_data))
+			self.log.debug('Read %d bytes from tesseract exited with %d', len(hocr_data), val)
 
-			logging.debug('Remove temporary image and output files')
+			self.log.debug('Removing %r and %r ...', hocr_file_path, img_file_path)
 			os.unlink(hocr_file_path + '.hocr')
 			os.unlink(img_file_path)
 
@@ -379,11 +381,19 @@ class OCRAlgorithm(object):
 					if box:
 						word.offset(box[0:2])
 
-			logging.debug('Detected words: %s', '\n'.join([' '.join([iword and iword.word for iword in line]) for line in words]))
+			self.log.debug(
+				'Detected words: %s',
+				'\n'.join(
+					' '.join(
+						iword.word if iword else "" for iword in line
+					)
+					for line in words
+				)
+			)
 			processDeferred.callback(words)
 
 		cmd = ['/usr/bin/tesseract', img_file_path, hocr_file_path, '-l', self.config.lang, 'hocr']
-		logging.debug('Running: tesseract %s' % (' '.join(cmd), ))
+		self.log.debug('Running command: %s', ' '.join(cmd))
 		_ReadStdinProcessProtocol(_process_output, cmd)
 
 		return processDeferred
@@ -417,7 +427,7 @@ class OCRAlgorithm(object):
 		best_match = (self.config.min_str_match_score, None)
 		for line in all_words:
 			for iword in xrange(len(line)):
-				logging.debug('Matching word: %s', line[iword])
+				self.log.debug('Matching word: %s', word)
 				scores = np.zeros(len(pattern))
 				words = []
 				for i in xrange(len(pattern)):
@@ -428,14 +438,14 @@ class OCRAlgorithm(object):
 
 				# compute overall matching score and penalize slightly
 				# by coverage of whole line
-				logging.debug('  Matched words: %s', words)
+				self.log.debug('  Matched words: %s', ".".join(str(word) for word in words))
 				score = scores.mean()
 				penalty = (1.0 * len(pattern)) / len(line)
 				final_score = score * (0.9 + penalty * 0.1)
-				logging.debug('  Score: %s * (0.9 + %s * 0.1)  = %s', scores, penalty, final_score)
+				self.log.debug('  Score: %s * (0.9 + %s * 0.1)  = %s', scores, penalty, final_score)
 				match = (final_score, words)
 				if match > best_match:
-					logging.debug('  Found new best match!')
+					self.log.debug('  Found new best match!')
 					best_match = match
 
 		return best_match
@@ -445,8 +455,8 @@ class OCRAlgorithm(object):
 			img_path = os.path.join(self.config.dump_dir, 'vnc_automate_%s.png' % datetime.isoformat(datetime.now()))
 			self.save_image(img, img_path)
 
-		logging.debug('')
-		logging.debug('==========')
+		self.log.debug('')
+		self.log.debug('==========')
 		if isinstance(pattern, basestring):
 			# make sure that we got a list of strings as pattern
 			pattern = pattern.split()
@@ -472,13 +482,13 @@ class OCRAlgorithm(object):
 					best_match = match
 
 			score, matched_words = best_match
-			logging.debug('Search pattern: %s', ' '.join(pattern))
+			self.log.debug('Search pattern: %s', ' '.join(pattern))
 			if matched_words:
-				logging.debug('Matched words: %s (score=%s)', ' '.join([iword.word for iword in matched_words]), score)
-				logging.debug('Matched word objects: %s', matched_words)
+				self.log.debug('Matched words: %s (score=%s)', ' '.join(iword.word for iword in matched_words), score)
+				self.log.debug('Matched word objects: %s', matched_words)
 				click_point = self.mean_point_of_boxes([iword.bbox for iword in matched_words])
 				return click_point
-			logging.debug('No matches found')
+			self.log.debug('No matches found')
 			return None
 
 		results_deferred = gatherResults(deferreds)
