@@ -427,7 +427,7 @@ class OCRAlgorithm(object):
 		best_match = (self.config.min_str_match_score, None)
 		for line in all_words:
 			for iword in xrange(len(line)):
-				self.log.debug('Matching word: %s', word)
+				self.log.debug('Matching word: %s', line[iword])
 				scores = np.zeros(len(pattern))
 				words = []
 				for i in xrange(len(pattern)):
