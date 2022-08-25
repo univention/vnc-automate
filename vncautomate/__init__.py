@@ -56,7 +56,8 @@ def init_logger(debug_level='info'):
 
 
 def connect_vnc(host):
-	logging.info('Connecting to VNC host %s', host)
+	log = logging.getLogger(__name__)
+	log.info('Connecting to VNC host %s', host)
 	client = api.connect(host)
 	client.mouseMove(1, 1)
 	client.mouseMove(0, 0)

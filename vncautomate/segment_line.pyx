@@ -77,6 +77,7 @@ cdef void segment_line(int _x, int _y, int label, np.ndarray[FLOAT_t, ndim=2] ed
 
 
 cdef void line_from_pixels(vector[FLOAT_t] &_line_pixels, FLOAT_t line_segment_min_covariance, FLOAT_t line_min_length, vector[FLOAT_t] &line):
+	log = logging.getLogger(__name__)
 	cdef int i
 	if _line_pixels.size() == 0:
 		for i in range(4): line[i] = 0
@@ -91,7 +92,7 @@ cdef void line_from_pixels(vector[FLOAT_t] &_line_pixels, FLOAT_t line_segment_m
 	cdef FLOAT_t covariance = variance[0] / (variance[1] + 0.0000001)  # avoid division by zero
 	if covariance < line_segment_min_covariance and covariance > 1.0 / line_segment_min_covariance:
 		# segment is not narrow enough and more blob-like
-		logging.debug('  Ignoring line segment: Segment is no line!')
+		log.debug('  Ignoring line segment: Segment is no line!')
 		for i in range(4): line[i] = 0
 		return
 
@@ -112,12 +113,13 @@ cdef void line_from_pixels(vector[FLOAT_t] &_line_pixels, FLOAT_t line_segment_m
 		length = line[3] - line[1]
 
 	if length < line_min_length:
-		logging.debug('  Ignoring line segment: Line is too short')
+		log.debug('  Ignoring line segment: Line is too short')
 		for i in range(4): line[i] = 0
 
 
 def find_lines(np.ndarray[FLOAT_t, ndim=2] edges not None, np.ndarray[INT_t, ndim=2] line_segments not None, config):
-	logging.debug('Detecting line segments in image...')
+	log = logging.getLogger(__name__)
+	log.debug('Detecting line segments in image...')
 	cdef vector[FLOAT_t] _lines  # [line1_min_x, line1_min_y, line1_max_x, line1_max_y, line2_min_x, ...]
 	cdef vector[FLOAT_t] line_pixels  # [x1, y1, x2, y2, x3, ...]
 	cdef vector[int] pixel_stack  # [x1, y1, x2, y2, x3, ...]
@@ -132,7 +134,7 @@ def find_lines(np.ndarray[FLOAT_t, ndim=2] edges not None, np.ndarray[INT_t, ndi
 				for i in range(4):
 					_lines.push_back(line[i])
 
-	logging.debug('%s lines have been segmented in total', len(_lines) / 4)
+	log.debug('%s lines have been segmented in total', len(_lines) / 4)
 
 	# convert lines to 2d structure
 	lines = np.array(_lines)
