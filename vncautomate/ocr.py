@@ -38,7 +38,7 @@ import time
 import logging
 from datetime import datetime
 import lxml.etree as ET
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageOps
 import numpy as np
 from scipy.signal import sepfir2d
 from tempfile import mktemp
@@ -467,6 +467,8 @@ class OCRAlgorithm(object):
 
 		# convert image to gray scale
 		img = img.convert('L')
+		img = ImageOps.invert(img)
+
 		boxes = self.boxes_from_image(img)
 
 		deferreds = []
