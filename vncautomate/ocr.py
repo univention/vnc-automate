@@ -467,7 +467,11 @@ class OCRAlgorithm(object):
 
 		# convert image to gray scale
 		img = img.convert('L')
-		img = ImageOps.invert(img)
+
+		# invert image if predominantly dark
+		avrg_value = np.asarray(img).mean(axis=0).mean() / 255
+		if avrg_value < 0.5:
+			img = ImageOps.invert(img)
 
 		boxes = self.boxes_from_image(img)
 
