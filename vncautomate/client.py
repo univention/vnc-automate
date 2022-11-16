@@ -179,15 +179,18 @@ class VNCAutomateClient(VNCDoToolClient):
 
 	def enterKeys(self, keys, log=True):
 		if log:
-			self.log.info('enterKeys(%s)', keys)
-		if len(keys):
-			sleep(0.5)
-			ikey = keys[0]
-			ikey = ikey.replace(' ', 'space')
-			self.keyPress(ikey)
-			return deferLater(reactor, 0.1, self.enterKeys, keys[1:], log=False)
-		return self
+			self.log.info('enterKeys(%r)', keys)
+		if not keys:
+			return self
+
+		ikey = {
+			" ": "space",
+			"\n": "enter",
+		}.get(keys[0], keys[0])
+		sleep(0.5)
+		self.keyPress(ikey)
+		return deferLater(reactor, 0.1, self.enterKeys, keys[1:], log=False)
 
 	def enterText(self, text):
-		self.log.info('enterText("%s")', text)
+		self.log.info('enterText(%r)', text)
 		return self.enterKeys(text, log=False)
