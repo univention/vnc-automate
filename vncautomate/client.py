@@ -185,6 +185,7 @@ class VNCAutomateClient(VNCDoToolClient):
 
 		ikey = {
 			" ": "space",
+			"\t": "tab",
 			"\n": "enter",
 		}.get(keys[0], keys[0])
 		sleep(0.5)
