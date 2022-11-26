@@ -48,12 +48,10 @@ VNCDoToolFactory.protocol = VNCAutomateClient
 def init_logger(debug_level="info"):
     # type: (str) -> None
     try:
-        # adjust logging config
         logging.basicConfig(
-            format="%(asctime)s.%(msecs)03d %(levelname)s [%(name)s:%(module)s:%(funcName)s]: %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
+            format="%(asctime)s %(levelname)s [%(name)s:%(module)s:%(funcName)s]: %(message)s",
+            level=getattr(logging, debug_level.upper()),
         )
-        logging.getLogger().setLevel(getattr(logging, debug_level.upper()))
     except AttributeError:
         logging.error('Given log level "%s" is unknown', debug_level)
         sys.exit(1)
