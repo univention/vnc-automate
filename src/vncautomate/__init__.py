@@ -32,6 +32,8 @@
 #
 
 import logging
+import logging.config
+import os
 import sys
 from types import TracebackType  # noqa: F401
 from typing import Optional, Type  # noqa: F401
@@ -47,14 +49,31 @@ VNCDoToolFactory.protocol = VNCAutomateClient
 
 def init_logger(debug_level="info"):
     # type: (str) -> None
+    debug = os.getenv("VNCAUTOMATE_DEBUG", "")
+    if debug and os.path.exists(debug):
+        if debug.endswith((".ini", ".cfg")):
+            logging.config.fileConfig(debug)
+        elif debug.endswith((".yaml", ".yml", ".json")):
+            import yaml
+
+            with open(debug, "r") as fd:
+                conf = yaml.safe_load(fd)
+
+            logging.config.dictConfig(conf)
+        else:
+            sys.exit("Unknown log configuration %r" % (debug,))
+
+        return
+
     try:
-        logging.basicConfig(
-            format="%(asctime)s %(levelname)s [%(name)s:%(module)s:%(funcName)s]: %(message)s",
-            level=getattr(logging, debug_level.upper()),
-        )
+        level = getattr(logging, debug_level.upper())
     except AttributeError:
-        logging.error('Given log level "%s" is unknown', debug_level)
-        sys.exit(1)
+        sys.exit("Unknown log level %r" % (debug_level,))
+
+    logging.basicConfig(
+        format="%(asctime)s %(levelname)s [%(name)s:%(module)s:%(funcName)s]: %(message)s",
+        level=level,
+    )
 
 
 def connect_vnc(host):

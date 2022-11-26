@@ -21,6 +21,7 @@ repos:
   - id: mypy
     additional_dependencies:
       - typed_ast
+      - types-PyYAML
 
 - repo: https://github.com/timothycrosley/isort
   rev: 5.12.0

@@ -34,6 +34,7 @@ python utils/installation_test/vnc-install-ucs.py --vnc isala:2 --language deu -
 
 ```
 mkdir dump/
+VNCAUTOMATE_DEBUG=logging.yaml \
 VNCAUTOMATE_TMP=1 \
 python3 -m vncautomate.cli \
 	--log debug \

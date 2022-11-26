@@ -11,11 +11,13 @@ RUN apt-get -qq update \
         python3-setuptools \
         python3-twisted \
         python3-wheel \
+        python3-yaml \
         python-pil \
         python-pip \
         python-setuptools \
         python-twisted \
         python-wheel \
+        python-yaml \
     && pip install vncdotool==1.0.0 \
     && pip3 install vncdotool \
     && rm -rf \
