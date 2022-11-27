@@ -224,22 +224,18 @@ class OCRAlgorithm(object):
         self.log.debug("Find neighboring lines at (%s, %s)", _x, _y)
 
         def _test_label(x, y):
-            # type: (int, int) -> Optional[int]
-            if x < 0 or y < 0 or x >= line_segments.shape[1] or y >= line_segments.shape[0]:
-                # point outside image -> return default empty label
-                return -1
-            label = line_segments[y, x]
-            if 0 <= label != _label:
-                matches.add(label)
-            return None
+            # type: (int, int) -> None
+            if 0 <= y < line_segments.shape[0] and 0 <= x < line_segments.shape[1]:
+                label = line_segments[y, x]
+                if 0 <= label != _label:
+                    matches.add(label)
 
         def _dist_square(line):
             # type: (BBox) -> float
-            results = [
+            return min(
                 (line[0] - _x) ** 2 + (line[1] - _y) ** 2,
                 (line[2] - _x) ** 2 + (line[3] - _y) ** 2,
-            ]
-            return min(results)
+            )
 
         # ......... ......... ......... 1----->27
         # ......... ......... .1--->27. 5       |
