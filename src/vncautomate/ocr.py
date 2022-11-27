@@ -139,28 +139,31 @@ class OCRAlgorithm(object):
 
         return horizontal_edges, vertical_edges
 
-    def segment_line(self, _x, _y, label, edges, line_segments):
+    def segment_line(self, x, y, label, edges, line_segments):
         # type: (int, int, int, np.array, np.array) -> List[P2D]
         # UNUSED in favor of segment_line.pyx
-        self.log.debug("Seeding line pixel segmentation at (%s, %s)", _x, _y)
+        self.log.debug("Seeding line pixel segmentation at (%s, %s)", x, y)
         line_pixels = []  # type: List[P2D]
-        stack = [(_x, _y)]  # type: List[P2D]
+        stack = [(x, y)]  # type: List[P2D]
         while stack:
             x, y = stack.pop(0)
-            if x < 0 or y < 0 or x >= edges.shape[1] or y >= edges.shape[0]:
-                # pixel is not in image anymore
+            if not (0 <= y < edges.shape[0] and 0 <= x < edges.shape[1]):
                 continue
+            if line_segments[y, x] >= 0:
+                continue
+            if edges[y, x] <= self.config.line_segment_low_threshold:
+                continue
+            # unlabeld edge pixel...
+            line_pixels.append((x, y))
+            line_segments[y, x] = label
 
-            if edges[y, x] > self.config.line_segment_low_threshold and line_segments[y, x] < 0:
-                # unlabeld edge pixel...
-                line_pixels.append((x, y))
-                line_segments[y, x] = label
-
-                # add direct neighbor pixels to stack
-                stack.append((x - 1, y))
-                stack.append((x + 1, y))
-                stack.append((x, y - 1))
-                stack.append((x, y + 1))
+            # add direct neighbor pixels to stack
+            stack += [
+                (x - 1, y),
+                (x + 1, y),
+                (x, y - 1),
+                (x, y + 1),
+            ]
 
         return line_pixels
 
