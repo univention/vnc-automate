@@ -337,7 +337,7 @@ class OCRAlgorithm(object):
             xml = ET.fromstring(xml_data, parser=ET.XMLParser())
         except ET.ParseError as err:
             # return an empty list of words to enable continuation
-            self.log.warn("XML output from tesseract is malformed: %s", err)
+            self.log.warning("XML output from tesseract is malformed: %s", err)
             return []
 
         words = []  # type: List[List[_OCRWord]]
@@ -360,7 +360,7 @@ class OCRAlgorithm(object):
                     _word = _OCRWord(word.text, bbox)
                     words_in_line.append(_word)
                 except UnicodeDecodeError as err:
-                    self.log.warn("Ignoring wrongly encoded word: %s", err)
+                    self.log.warning("Ignoring wrongly encoded word: %s", err)
             words.append(words_in_line)
 
         self.log.debug("Found %s words altogether", len(words))
