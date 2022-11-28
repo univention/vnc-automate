@@ -36,16 +36,13 @@ from __future__ import division
 from time import sleep, time
 import logging
 
-from PIL import Image
-from scipy import ndimage
-from scipy import signal
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred
 from twisted.internet.task import deferLater
 from vncdotool.client import VNCDoToolClient
 
 from .config import OCRConfig
-from .ocr import OCRAlgorithm, np_from_img
+from .ocr import OCRAlgorithm
 
 
 class VNCAutomateException(ValueError):
@@ -107,58 +104,6 @@ class VNCAutomateClient(VNCDoToolClient):
 		self.deferred.addCallback(lambda _click_point: _check_timeout(_click_point))
 		self.deferred.addCallback(lambda result: self._find_text(text, timeout=timeout, defer=1e-2, start_time=start_time) if result is None else result)
 		return self.deferred
-
-	def findSubimage(self, subimage_path, timeout=30, defer=1e-2, start_time=-1, min_match=0.9):
-		self.log.info('findSubimage("%s", timeout=%.1f, min_match=%.2f)', subimage_path, timeout, min_match)
-
-		subimage = Image.open(subimage_path)
-		if start_time < 0:
-			start_time = time()
-
-		def _check_timeout(match_value, pos):
-			self.log.info('_check_timeout: %s %s', match_value, pos)
-			duration = time() - start_time
-			if match_value >= min_match:
-				# Pattern found
-				self.log.info('Search pattern found, with a match value of %.2f/1.00 [%.1f sec]', match_value, duration)
-				return match_value, pos
-			else:
-				# check timeout
-				self.log.info('No match for search pattern; match value was %.2f<%.2f [%.1f sec]', match_value, min_match, duration)
-				if timeout > 0 and duration >= timeout:
-					raise VNCAutomateException('Search for sub-image "%s" in VNC screen timed out after %.1f seconds!' % (subimage_path, duration))
-				# Return None to try again
-				return None
-
-		self.framebufferUpdateRequest()
-		self.deferred = Deferred()
-		self.deferred.addCallback(lambda _none: deferLater(reactor, defer, lambda: None))
-		self.deferred.addCallback(lambda _none: self.image_match_value(self.screen, subimage))
-		self.deferred.addCallback(lambda result: _check_timeout(result[0], result[1]))
-		self.deferred.addCallback(lambda result: self.findSubimage(subimage_path, timeout=timeout, defer=1e-2, start_time=start_time, min_match=min_match) if result is None else result)
-		return self.deferred
-
-	# Returns a value from 0 to 1, where 1 means the subimg is a pixel-perfect
-	# part of the img. Also returns the position of the match in img.
-	def image_match_value(self, img, subimg):
-		img = img.convert('L')
-		subimg = subimg.convert('L')
-
-		img = np_from_img(img)
-		subimg = np_from_img(subimg)
-
-		img = ndimage.sobel(img, axis=0) + ndimage.sobel(img, axis=1)
-		subimg = ndimage.sobel(subimg, axis=0) + ndimage.sobel(subimg, axis=1)
-
-		match_maxtrix = signal.fftconvolve(img, subimg[::-1, ::-1], mode='same')
-		normalized_match_matrix = match_maxtrix / (subimg * subimg).sum()
-		best_match_value = normalized_match_matrix.max()
-
-		best_match_x = normalized_match_matrix.argmax() % normalized_match_matrix.shape[1]
-		best_match_y = normalized_match_matrix.argmax() / normalized_match_matrix.shape[1]
-
-		self.log.info('image_match_value: %s %s %s', best_match_value, best_match_x, best_match_y)
-		return best_match_value, (best_match_x, best_match_y)
 
 	def mouseMoveToText(self, text, timeout=30, defer=1e-2, log=True):
 		if log:
