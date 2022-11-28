@@ -127,7 +127,7 @@ def main_img(img_path, words, config):
     reactor.run()
 
 
-if __name__ == "__main__":
+def main():  # type: () -> None
     args = parse_args()
     config = get_config_from_args(args)
     words = " ".join(args.words)
@@ -137,3 +137,7 @@ if __name__ == "__main__":
         main_img(args.host, words, config)
     else:
         main_vnc(args.host, words, config)
+
+
+if __name__ == "__main__":
+    main()
