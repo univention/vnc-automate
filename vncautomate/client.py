@@ -96,16 +96,10 @@ class VNCAutomateClient(VNCDoToolClient):
 		self.deferred.addCallback(lambda result: self._find_text(text, timeout=timeout, defer=1e-2, start_time=start_time) if result is None else result)
 		return self.deferred
 
-	def mouseMoveToText(self, text, timeout=30, defer=1e-2, log=True):
-		if log:
-			self.log.info('mouseMoveToText("%s", timeout=%.1f, defer=%.2f)', text, timeout, defer)
-		deferred = self._find_text(text, defer=defer, timeout=timeout)
-		deferred.addCallback(lambda pos: self.mouseMove(*pos))
-		return deferred
-
 	def mouseClickOnText(self, text, timeout=30, defer=1e-2):
 		self.log.info('mouseClickOnText("%s", timeout=%.1f, defer=%.2f)', text, timeout, defer)
-		deferred = self.mouseMoveToText(text, timeout=timeout, defer=defer, log=False)
+		deferred = self._find_text(text, defer=defer).addTimeout(timeout, reactor)
+		deferred.addCallback(lambda pos: self.mouseMove(*pos))
 		deferred.addCallback(lambda _client: deferLater(reactor, 0.1, self.mousePress, 1))
 		deferred.addCallback(lambda _client: deferLater(reactor, 0.1, self.mouseMove, 0, 0))
 		return deferred

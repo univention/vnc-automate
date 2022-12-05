@@ -80,10 +80,7 @@ def main_vnc(host, words, config):
 	logging.info('Connecting to VNC host %s', host)
 	with VNCConnection(host) as client:
 		client.updateOCRConfig(config)
-		client.waitForText(words)
-		client.mouseMoveToText(words)
-		client.mousePress(1)
-		client.mouseMove(0, 0)
+		client.mouseClickOnText(words)
 
 
 def main_img(img_path, words, config):
