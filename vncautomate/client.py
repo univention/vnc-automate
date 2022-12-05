@@ -67,11 +67,6 @@ class VNCAutomateClient(VNCDoToolClient):
 			self.ocr_algo.config.update(kwargs)
 		return self
 
-	def saveScreenshot(self, path):
-		self.framebufferUpdateRequest()
-		self.screen.save(path)
-		return self
-
 	def _find_text(self, text, timeout=-1, defer=1e-2, start_time=-1, prevent_screen_saver=False):
 		if start_time < 0:
 			start_time = time()
