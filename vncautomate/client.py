@@ -67,10 +67,6 @@ class VNCAutomateClient(VNCDoToolClient):
 			self.ocr_algo.config.update(kwargs)
 		return self
 
-	def updateRectangle(self, *args):
-		self.log.debug('Frame buffer update for region %s', args[:4])
-		VNCDoToolClient.updateRectangle(self, *args)
-
 	def saveScreenshot(self, path):
 		self.framebufferUpdateRequest()
 		self.screen.save(path)
