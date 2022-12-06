@@ -33,7 +33,7 @@
 
 from __future__ import division
 
-from time import sleep, time
+from time import time
 import logging
 
 from twisted.internet import reactor
@@ -121,7 +121,6 @@ class VNCAutomateClient(VNCDoToolClient):
 			"\t": "tab",
 			"\n": "enter",
 		}.get(keys[0], keys[0])
-		sleep(0.5)
 		self.keyPress(ikey)
 		return deferLater(reactor, 0.1, self.enterKeys, keys[1:], log=False)
 
