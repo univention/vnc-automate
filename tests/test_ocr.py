@@ -3,8 +3,6 @@ from __future__ import absolute_import
 
 from os.path import dirname, join
 
-import numpy as np
-from numpy.testing import assert_allclose
 from PIL import Image
 from twisted.trial import unittest
 
@@ -18,17 +16,17 @@ class TestOcr(unittest.TestCase):
         algo = OCRAlgorithm(config)
         img = Image.open(join(dirname(__file__), image))
         deferred = algo.find_text_in_image(img, text)
-        deferred.addCallback(lambda cp: assert_allclose(cp, np.array(where), atol=0.5))
+        deferred.addCallback(lambda cp: self.assertEqual(cp, where))
         return deferred
 
     def test_username(self):
-        return self._ocr("login.png", "Username", (80.5, 225.0))
+        return self._ocr("login.png", "Username", (80, 225))
 
     def test_password(self):
-        return self._ocr("login.png", "Password", (78.5, 275.5))
+        return self._ocr("login.png", "Password", (78, 275))
 
     def test_login(self):
-        return self._ocr("login.png", "LOGIN", (278.5, 337.0))
+        return self._ocr("login.png", "LOGIN", (278, 337))
 
 
 if __name__ == "__main__":
