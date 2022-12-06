@@ -292,7 +292,7 @@ class OCRAlgorithm(object):
 
     def detect_boxes(self, horizontal_lines, vertical_lines, horizontal_line_segments, vertical_line_segments):
         # type: (Sequence[BBox], Sequence[BBox], np.array, np.array) -> List[BBox]
-        # iterate over all horizontal lines and try create
+        # iterate over all horizontal lines and try to create
         # a rectangle starting from the top left corner
         self.log.debug("Detecting boxes in image given the detected lines")
         boxes = []  # type: List[BBox]
