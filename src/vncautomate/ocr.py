@@ -120,7 +120,7 @@ class OCRAlgorithm(object):
         self.log.debug("Detecting horizontal and vertical edges in screen")
         mat = np_from_img(img)
         gradient_kernel = np.array((0, 1, 0, -1, 0), dtype="float32")
-        smoothing_kernel = np.ones((7), dtype="float32")
+        smoothing_kernel = np.ones(7, dtype="float32")
 
         vertical_edges = sepfir2d(mat, gradient_kernel, smoothing_kernel) / 7
         vertical_edges_positive = vertical_edges * (vertical_edges > 0)
