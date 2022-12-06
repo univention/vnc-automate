@@ -35,10 +35,10 @@ from __future__ import division
 
 import logging
 from time import time
-from typing import Optional, Sequence, Tuple  # noqa: F401
+from typing import List, Optional, Sequence, Tuple, Union  # noqa: F401
 
 from twisted.internet import reactor
-from twisted.internet.defer import Deferred
+from twisted.internet.defer import Deferred  # noqa: F401
 from twisted.internet.task import deferLater
 from vncdotool.client import VNCDoException, VNCDoToolClient, VNCDoToolFactory
 
@@ -54,6 +54,50 @@ __all__ = [
 
 class VNCAutomateException(VNCDoException):
     pass
+
+
+class State(object):
+    HISTORY = 5
+
+    def __init__(self):
+        # type: () -> None
+        self.start_time = time()
+        self.seen = []  # type: List[int]
+        self.last = 0
+
+    def __str__(self):
+        # type: () -> str
+        return "State(%r, last=%d)" % (self.seen, self.last)
+
+    def stable(self, key):
+        # type: (int) -> bool
+        """
+        >>> s = State()
+        >>> s.stable(1)
+        False
+        >>> s.stable(1)
+        True
+        >>> s.stable(1)
+        False
+        >>> s = State()
+        >>> s.stable(1)
+        False
+        >>> s.stable(2)
+        False
+        >>> s.stable(1)
+        True
+        """
+        if key in self.seen:
+            if key != self.last:
+                self.last = key
+                return True
+        else:
+            self.seen.append(key)
+            del self.seen[: -self.HISTORY]
+        return False
+
+    def duration(self):
+        return time() - self.start_time
 
 
 class VNCAutomateClient(VNCDoToolClient):
@@ -75,38 +119,49 @@ class VNCAutomateClient(VNCDoToolClient):
             self.ocr_algo.config.update(**kwargs)
         return self
 
-    def _find_text(self, text, timeout=-1, start_time=-1, prevent_screen_saver=False):
-        # type: (str, int, float, bool) -> Deferred
-        if start_time < 0:
-            start_time = time()
+    def _find_text(self, text, timeout=0, wait=True, _state=None):
+        # type: (str, int, bool, Optional[State]) -> Deferred
+        state = _state or State()
 
-        def _check_timeout(click_point):
-            # type: (Optional[Tuple[int, int]]) -> Optional[Tuple[int, int]]
-            duration = time() - start_time
+        def _run_ocr(_):
+            # type: (None) -> Union[Tuple[int, int], Deferred]
+            if not self.screen.getbbox():
+                self.keyPress("ctrl")
+                return again()
+
+            key = hash(self.screen.tobytes())
+            if wait and not state.stable(key):
+                self.log.debug("Unchanged screen %s", state)
+                return again()
+
+            return self.ocr_algo.find_text_in_image(self.screen, text).addCallback(_check_result)
+
+        def _check_result(click_point):
+            # type: (Optional[Tuple[int, int]]) -> Union[Tuple[int, int], Deferred]
             if click_point is not None:
-                # done, we found the text :)
-                self.log.info("Found %r [%.1f sec]", text, duration)
+                self.log.info("Found %r [%.1f sec]", text, state.duration())
                 return click_point
-            else:
-                # check timeout
-                self.log.debug("Not found %r [%.1f sec]", text, duration)
-                if 0 < timeout <= duration:
-                    raise VNCAutomateException('Search for string "%s" in VNC screen timed out after %.1f seconds!' % (text, duration))
-                if prevent_screen_saver:
-                    self.keyPress("ctrl")
 
-                # ... and return None to try again
-                return None
+            return again()
 
-        self.framebufferUpdateRequest()
-        self.deferred = Deferred()
-        self.deferred.addCallback(lambda _none: deferLater(reactor, self.PERIOD, lambda: None))
-        self.deferred.addCallback(lambda _none: self.ocr_algo.find_text_in_image(self.screen, text))
-        self.deferred.addCallback(lambda _click_point: _check_timeout(_click_point))
-        self.deferred.addCallback(
-            lambda result: self._find_text(text, timeout=timeout, start_time=start_time) if result is None else result
-        )
-        return self.deferred
+        def again():
+            # type: () -> Deferred
+            duration = state.duration()
+            self.log.debug("Not found %r [%.1f sec]", text, duration)
+            if 0 < abs(timeout) <= duration:
+                raise VNCAutomateException("Search for string %r in VNC screen timed out after %.1f seconds!" % (text, duration))
+
+            return deferLater(
+                reactor,
+                self.PERIOD,
+                self._find_text,
+                text,
+                timeout=timeout,
+                wait=wait,
+                _state=state,
+            )
+
+        return self.refreshScreen().addCallback(_run_ocr)
 
     def mouseClickOnText(self, text, timeout=30):
         # type: (str, int) -> Deferred
@@ -117,10 +172,10 @@ class VNCAutomateClient(VNCDoToolClient):
         deferred.addCallback(lambda _client: deferLater(reactor, 0.1, self.mouseMove, 0, 0))
         return deferred
 
-    def waitForText(self, text, timeout=30, prevent_screen_saver=False):
+    def waitForText(self, text, timeout=30, wait=True):
         # type: (str, int, bool) -> Deferred
         self.log.info('waitForText("%s", timeout=%.1f)', text, timeout)
-        deferred = self._find_text(text, timeout=timeout, prevent_screen_saver=prevent_screen_saver)
+        deferred = self._find_text(text, timeout=timeout, wait=wait)
         deferred.addCallback(lambda _pos: self)  # make sure to return self
         return deferred
 

@@ -364,10 +364,11 @@ class OCRAlgorithm(object):
         img = img.resize((new_width, new_height))
         img.save(img_file_path)
 
-        processDeferred = Deferred()
+        deferred = Deferred()
 
         def _process_output(val):
             # type: (int) -> None
+
             # read OCR output from temp file
             with open(hocr_file_path, "rb") as hocr_file:
                 hocr_data = hocr_file.read()
@@ -388,14 +389,14 @@ class OCRAlgorithm(object):
                         word.offset(box[0:2])
 
             self.log.debug("Detected words: %s", "\n".join(" ".join(iword.word if iword else "" for iword in line) for line in words))
-            processDeferred.callback(words)
+            deferred.callback(words)
 
         cmd = ["/usr/bin/tesseract", img_file_path, out_file_path, "-l", self.config.lang, "hocr"]
         self.log.debug("Running command: %s", " ".join(cmd))
         output = utils.getProcessValue(cmd[0], cmd[1:], os.environ)
-        output.addCallback(_process_output)
+        output.addCallbacks(_process_output, deferred.errback)
 
-        return processDeferred
+        return deferred
 
     def boxes_from_image(self, img):
         # type: (Image) -> List[BBox]
@@ -473,6 +474,6 @@ class OCRAlgorithm(object):
             self.log.debug("No matches found")
             return None
 
-        results_deferred = gatherResults(deferreds)
-        results_deferred.addCallback(_process_matches)
-        return results_deferred
+        deferred = gatherResults(deferreds)
+        deferred.addCallback(_process_matches)
+        return deferred
