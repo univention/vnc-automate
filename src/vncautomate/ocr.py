@@ -496,11 +496,9 @@ class OCRAlgorithm(object):
 
         boxes = self.boxes_from_image(img)
 
-        deferreds = []  # type: List[Deferred]
-        for box in [None] + boxes:  # type: ignore
-            deferred = self.ocr_img(img, box)
-            deferred.addCallback(self.find_best_matching_words, pattern)
-            deferreds.append(deferred)
+        deferreds = [
+            self.ocr_img(img, box).addCallback(self.find_best_matching_words, pattern) for box in [None] + boxes  # type: ignore
+        ]  # type: List[Deferred]
 
         def _process_matches(matches):
             # type: (Sequence[Tuple[float, Sequence[_OCRWord]]]) -> Optional[np.array]
