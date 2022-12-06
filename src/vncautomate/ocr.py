@@ -38,6 +38,7 @@ import logging
 import os
 import re
 from datetime import datetime
+from operator import itemgetter
 from tempfile import gettempdir
 from typing import Iterable, List, Optional, Sequence, Set, Tuple, Union  # noqa: F401
 
@@ -443,8 +444,8 @@ class OCRAlgorithm(object):
         return boxes
 
     def find_best_matching_words(self, all_words, pattern):
-        # type: (Iterable[Sequence[_OCRWord]], Sequence[str]) -> Tuple[float, Optional[List[_OCRWord]]]
-        best_match = (self.config.min_str_match_score, None)  # type: Tuple[float, Optional[List[_OCRWord]]]
+        # type: (Iterable[Sequence[_OCRWord]], Sequence[str]) -> Tuple[float, List[_OCRWord]]
+        best_match = (0.0, [])  # type: Tuple[float, List[_OCRWord]]
         for line in all_words:
             for iword, word in enumerate(line):
                 self.log.debug("Matching word: %s", word)
@@ -502,14 +503,9 @@ class OCRAlgorithm(object):
 
         def _process_matches(matches):
             # type: (Sequence[Tuple[float, Sequence[_OCRWord]]]) -> Optional[np.array]
-            best_match = (self.config.min_str_match_score, None)  # type: Tuple[float, Optional[List[_OCRWord]]]
-            for match in matches:
-                if match > best_match:
-                    best_match = match
-
-            score, matched_words = best_match
             self.log.debug("Search pattern: %s", " ".join(pattern))
-            if matched_words:
+            score, matched_words = max(matches, key=itemgetter(0)) if matches else (0.0, [])
+            if score > self.config.min_str_match_score:
                 self.log.debug("Matched words: %s (score=%s)", " ".join(iword.word for iword in matched_words), score)
                 self.log.debug("Matched word objects: %s", matched_words)
                 click_point = self.mean_point_of_boxes([iword.bbox for iword in matched_words])
