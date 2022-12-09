@@ -10,11 +10,7 @@ from PIL import Image
 
 from vncautomate import init_logger, segment_line  # type: ignore
 from vncautomate.config import OCRConfig
-from vncautomate.ocr import OCRAlgorithm
-
-
-def np_from_img(im):
-	return np.asarray(im, dtype=np.float32)
+from vncautomate.ocr import OCRAlgorithm, np_from_img
 
 
 class TestCython(unittest.TestCase):
