@@ -23,6 +23,5 @@ def algo():
 )
 def test_find_best_matching_words(algo, all_words, pattern, score, match):
     _all_words = [[_OCRWord(word, None) for word in line.split()] for line in all_words]
-    _pattern = pattern.split()
-    _score, _match = algo.find_best_matching_words(_all_words, _pattern)
+    _score, _match = algo.find_best_matching_words(_all_words, pattern)
     assert (_score, " ".join(word.word for word in _match or [])) == (pytest.approx(score), match)

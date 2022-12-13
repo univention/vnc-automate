@@ -39,12 +39,8 @@ from types import TracebackType  # noqa: F401
 from typing import Optional, Type  # noqa: F401
 
 from vncdotool import api
-from vncdotool.client import VNCDoToolFactory  # noqa: F401
 
-from .client import VNCAutomateClient
-
-# force vncdotool to use the VNCAutomateClient class
-VNCDoToolFactory.protocol = VNCAutomateClient
+from .client import VNCAutomateClient, VNCAutomateFactory  # noqa: F401
 
 
 def init_logger(debug_level="info"):
@@ -80,7 +76,7 @@ def connect_vnc(host):
     # type: (str) -> VNCAutomateClient
     log = logging.getLogger(__name__)
     log.info("Connecting to VNC host %s", host)
-    client = api.connect(host)
+    client = api.connect(host, factory_class=VNCAutomateFactory)
     client.mouseMove(1, 1)
     client.mouseMove(0, 0)
     return client

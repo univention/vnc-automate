@@ -40,7 +40,7 @@ import re
 from datetime import datetime
 from operator import itemgetter
 from tempfile import gettempdir
-from typing import Iterable, Iterator, List, Optional, Sequence, Set, Tuple, Union, cast  # noqa: F401
+from typing import Iterable, Iterator, List, Optional, Sequence, Set, Tuple, cast  # noqa: F401
 
 try:
     import lxml.etree as ET
@@ -415,9 +415,11 @@ class OCRAlgorithm(object):
 
         return boxes
 
-    def find_best_matching_words(self, all_words, pattern):
-        # type: (Iterable[Sequence[_OCRWord]], Sequence[str]) -> Tuple[float, Sequence[_OCRWord]]
-        scores = (m for line in all_words for m in self._find_best_matching_words(line, pattern))
+    def find_best_matching_words(self, all_words, *patterns):
+        # type: (Iterable[Sequence[_OCRWord]], *str) -> Tuple[float, Sequence[_OCRWord]]
+        scores = (
+            m for pattern in patterns for line in all_words for m in self._find_best_matching_words(line, pattern.lower().split())
+        )
         return max(scores, key=itemgetter(0)) if all_words else (0.0, [])
 
     def _find_best_matching_words(self, line, pattern):
@@ -435,21 +437,14 @@ class OCRAlgorithm(object):
             )
             yield (final_score, words)
 
-    def find_text_in_image(self, img, pattern):
-        # type: (Image, Union[str, List[str]]) -> Deferred
+    def find_text_in_image(self, img, *patterns):
+        # type: (Image, *str) -> Deferred
         if self.config.dump_dir:
             img_path = os.path.join(self.config.dump_dir, "vnc_automate_%s.png" % datetime.now().isoformat())
             img.save(img_path)
 
         if self.config.dump_screen:
             img.save(self.config.dump_screen)
-
-        self.log.debug("")
-        self.log.debug("==========")
-        if not isinstance(pattern, list):
-            # make sure that we got a list of strings as pattern
-            pattern = pattern.split()
-        pattern = [i.lower() for i in pattern]
 
         # convert image to gray scale
         img = img.convert("L")
@@ -462,13 +457,13 @@ class OCRAlgorithm(object):
         boxes = self.boxes_from_image(img)
 
         deferreds = [
-            self.ocr_img(img, box).addCallback(self.find_best_matching_words, pattern) for box in [None] + boxes  # type: ignore
+            self.ocr_img(img, box).addCallback(self.find_best_matching_words, *patterns) for box in [None] + boxes  # type: ignore
         ]  # type: List[Deferred]
 
         def _process_matches(matches):
             # type: (Sequence[Tuple[float, Sequence[_OCRWord]]]) -> Optional[P2D]
-            self.log.debug("Search pattern: %s", " ".join(pattern))
-            score, matched_words = max(matches, key=itemgetter(0)) if matches else (0.0, [])
+            self.log.debug("Search pattern: %r", patterns)
+            score, matched_words = max(matches, key=itemgetter(0)) if matches else (self.config.min_str_match_score, [])
             if score > self.config.min_str_match_score:
                 self.log.debug("Matched words: %s (score=%s)", " ".join(iword.word for iword in matched_words), score)
                 self.log.debug("Matched word objects: %s", matched_words)

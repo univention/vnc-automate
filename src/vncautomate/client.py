@@ -40,13 +40,19 @@ from typing import Optional, Sequence, Tuple  # noqa: F401
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred
 from twisted.internet.task import deferLater
-from vncdotool.client import VNCDoToolClient
+from vncdotool.client import VNCDoException, VNCDoToolClient, VNCDoToolFactory
 
 from .config import OCRConfig
 from .ocr import OCRAlgorithm
 
+__all__ = [
+    "VNCAutomateException",
+    "VNCAutomateClient",
+    "VNCAutomateFactory",
+]
 
-class VNCAutomateException(ValueError):
+
+class VNCAutomateException(VNCDoException):
     pass
 
 
@@ -135,3 +141,7 @@ class VNCAutomateClient(VNCDoToolClient):
         # type: (str) -> VNCAutomateClient
         self.log.info("enterText(%r)", text)
         return self.enterKeys(text, log=False)
+
+
+class VNCAutomateFactory(VNCDoToolFactory):
+    protocol = VNCAutomateClient
