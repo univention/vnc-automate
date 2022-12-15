@@ -34,10 +34,10 @@
 import argparse
 import logging
 import os
+from typing import Optional, Sequence  # noqa: F401
 
 from PIL import Image
 from twisted.internet import reactor
-from twisted.internet.threads import deferToThread
 
 from . import VNCConnection, init_logger
 from .config import OCRConfig
@@ -87,11 +87,11 @@ def get_parser():
     return parser
 
 
-def parse_args():
-    # type: () -> argparse.Namespace
+def parse_args(argv=None):
+    # type: (Optional[Sequence[str]]) -> argparse.Namespace
     # parse arguments and create OCRConfig instance
     parser = get_parser()
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def get_config_from_args(args):
@@ -110,25 +110,19 @@ def main_vnc(host, words, config):
 def main_img(img_path, words, config):
     # type: (str, str, OCRConfig) -> None
 
-    def run_on_img():
-        # type: () -> None
-        logging.info("Loading image %s", img_path)
-        ocr_algo = OCRAlgorithm(config)
-        with Image.open(img_path) as img:
-            deferred = ocr_algo.find_text_in_image(img, words)
-            deferred.addCallback(lambda click_point: logging.info("Final click point: %s", click_point))
-            deferred.addBoth(lambda _none: reactor.stop())
+    logging.info("Loading image %s", img_path)
+    ocr_algo = OCRAlgorithm(config)
+    with Image.open(img_path) as img:
+        deferred = ocr_algo.find_text_in_image(img, words)
+        deferred.addCallback(lambda click_point: logging.info("Final click point: %s", click_point))
+        deferred.addErrback(logging.error)
+        deferred.addBoth(lambda _none: reactor.stop())
 
-    def err_handler(err):
-        # type: (Exception) -> None
-        logging.error(err)
-
-    deferToThread(run_on_img).addErrback(err_handler)
     reactor.run()
 
 
-def main():  # type: () -> None
-    args = parse_args()
+def main(argv=None):  # type: (Optional[Sequence[str]]) -> None
+    args = parse_args(argv)
     config = get_config_from_args(args)
     words = " ".join(args.words)
     init_logger(args.log)
