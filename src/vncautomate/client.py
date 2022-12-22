@@ -57,6 +57,8 @@ class VNCAutomateException(VNCDoException):
 
 
 class VNCAutomateClient(VNCDoToolClient):
+    PERIOD = 2.0  # delay between tries
+
     def __init__(self):
         # type: () -> None
         VNCDoToolClient.__init__(self)
@@ -73,8 +75,8 @@ class VNCAutomateClient(VNCDoToolClient):
             self.ocr_algo.config.update(**kwargs)
         return self
 
-    def _find_text(self, text, timeout=-1, defer=1e-2, start_time=-1, prevent_screen_saver=False):
-        # type: (str, int, float, float, bool) -> Deferred
+    def _find_text(self, text, timeout=-1, start_time=-1, prevent_screen_saver=False):
+        # type: (str, int, float, bool) -> Deferred
         if start_time < 0:
             start_time = time()
 
@@ -98,27 +100,27 @@ class VNCAutomateClient(VNCDoToolClient):
 
         self.framebufferUpdateRequest()
         self.deferred = Deferred()
-        self.deferred.addCallback(lambda _none: deferLater(reactor, defer, lambda: None))
+        self.deferred.addCallback(lambda _none: deferLater(reactor, self.PERIOD, lambda: None))
         self.deferred.addCallback(lambda _none: self.ocr_algo.find_text_in_image(self.screen, text))
         self.deferred.addCallback(lambda _click_point: _check_timeout(_click_point))
         self.deferred.addCallback(
-            lambda result: self._find_text(text, timeout=timeout, defer=1e-2, start_time=start_time) if result is None else result
+            lambda result: self._find_text(text, timeout=timeout, start_time=start_time) if result is None else result
         )
         return self.deferred
 
-    def mouseClickOnText(self, text, timeout=30, defer=1e-2):
-        # type: (str, int, float) -> Deferred
-        self.log.info('mouseClickOnText("%s", timeout=%.1f, defer=%.2f)', text, timeout, defer)
-        deferred = self._find_text(text, defer=defer).addTimeout(timeout, reactor)
+    def mouseClickOnText(self, text, timeout=30):
+        # type: (str, int) -> Deferred
+        self.log.info('mouseClickOnText("%s", timeout=%.1f)', text, timeout)
+        deferred = self._find_text(text).addTimeout(timeout, reactor)
         deferred.addCallback(lambda pos: self.mouseMove(*pos))
         deferred.addCallback(lambda _client: deferLater(reactor, 0.1, self.mousePress, 1))
         deferred.addCallback(lambda _client: deferLater(reactor, 0.1, self.mouseMove, 0, 0))
         return deferred
 
-    def waitForText(self, text, timeout=30, defer=1e-2, prevent_screen_saver=False):
-        # type: (str, int, float, bool) -> Deferred
-        self.log.info('waitForText("%s", timeout=%.1f, defer=%.2f)', text, timeout, defer)
-        deferred = self._find_text(text, timeout=timeout, defer=defer, prevent_screen_saver=prevent_screen_saver)
+    def waitForText(self, text, timeout=30, prevent_screen_saver=False):
+        # type: (str, int, bool) -> Deferred
+        self.log.info('waitForText("%s", timeout=%.1f)', text, timeout)
+        deferred = self._find_text(text, timeout=timeout, prevent_screen_saver=prevent_screen_saver)
         deferred.addCallback(lambda _pos: self)  # make sure to return self
         return deferred
 
