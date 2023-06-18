@@ -9,5 +9,5 @@ setup(
             language="c++",
         ),
     ],
-    test_suite='tests',
+    test_suite="tests",
 )

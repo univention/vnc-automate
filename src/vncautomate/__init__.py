@@ -45,49 +45,48 @@ from .client import VNCAutomateClient
 VNCDoToolFactory.protocol = VNCAutomateClient
 
 
-def init_logger(debug_level='info'):
-	# type: (str) -> None
-	try:
-		# adjust logging config
-		logging.basicConfig(
-			format='%(asctime)s.%(msecs)03d %(levelname)s [%(name)s:%(module)s:%(funcName)s]: %(message)s',
-			datefmt='%Y-%m-%d %H:%M:%S',
-		)
-		logging.getLogger().setLevel(getattr(logging, debug_level.upper()))
-	except AttributeError:
-		logging.error('Given log level "%s" is unknown', debug_level)
-		sys.exit(1)
+def init_logger(debug_level="info"):
+    # type: (str) -> None
+    try:
+        # adjust logging config
+        logging.basicConfig(
+            format="%(asctime)s.%(msecs)03d %(levelname)s [%(name)s:%(module)s:%(funcName)s]: %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+        logging.getLogger().setLevel(getattr(logging, debug_level.upper()))
+    except AttributeError:
+        logging.error('Given log level "%s" is unknown', debug_level)
+        sys.exit(1)
 
 
 def connect_vnc(host):
-	# type: (str) -> VNCAutomateClient
-	log = logging.getLogger(__name__)
-	log.info('Connecting to VNC host %s', host)
-	client = api.connect(host)
-	client.mouseMove(1, 1)
-	client.mouseMove(0, 0)
-	return client
+    # type: (str) -> VNCAutomateClient
+    log = logging.getLogger(__name__)
+    log.info("Connecting to VNC host %s", host)
+    client = api.connect(host)
+    client.mouseMove(1, 1)
+    client.mouseMove(0, 0)
+    return client
 
 
 def disconnect_vnc():
-	# type: () -> None
-	api.shutdown()
+    # type: () -> None
+    api.shutdown()
 
 
 class VNCConnection(object):
+    def __init__(self, host, dump_img=None):
+        # type: (str, Optional[str]) -> None
+        self.host = host
 
-	def __init__(self, host, dump_img=None):
-		# type: (str, Optional[str]) -> None
-		self.host = host
+    def reconnect(self):
+        # type: () -> VNCAutomateClient
+        return connect_vnc(self.host)
 
-	def reconnect(self):
-		# type: () -> VNCAutomateClient
-		return connect_vnc(self.host)
+    def __enter__(self):
+        # type: () -> VNCAutomateClient
+        return connect_vnc(self.host)
 
-	def __enter__(self):
-		# type: () -> VNCAutomateClient
-		return connect_vnc(self.host)
-
-	def __exit__(self, type, value, traceback):
-		# type: (Optional[Type[Exception]], Optional[Exception], Optional[TracebackType]) -> None
-		disconnect_vnc()
+    def __exit__(self, type, value, traceback):
+        # type: (Optional[Type[Exception]], Optional[Exception], Optional[TracebackType]) -> None
+        disconnect_vnc()
