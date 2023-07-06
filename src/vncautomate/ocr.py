@@ -321,9 +321,9 @@ class OCRAlgorithm(object):
             return []
 
         words = []  # type: List[List[_OCRWord]]
-        for line in xml.findall(".//{http://www.w3.org/1999/xhtml}span[@class='ocr_line']"):
-            words_in_line = []
-            for word in line:
+        for para in xml.findall(".//{http://www.w3.org/1999/xhtml}p[@class='ocr_par']"):
+            words_in_para = []
+            for word in para.findall(".//{http://www.w3.org/1999/xhtml}span[@class='ocrx_word']"):
                 # get the bounding box for the word
                 title = word.attrib.get("title", "")
                 match = self.RE_BBOX.search(title)
@@ -338,10 +338,10 @@ class OCRAlgorithm(object):
 
                 try:
                     _word = _OCRWord(word.text, bbox)
-                    words_in_line.append(_word)
+                    words_in_para.append(_word)
                 except UnicodeDecodeError as err:
                     self.log.warning("Ignoring wrongly encoded word: %s", err)
-            words.append(words_in_line)
+            words.append(words_in_para)
 
         self.log.debug("Found %s words altogether", len(words))
         return words
@@ -388,7 +388,7 @@ class OCRAlgorithm(object):
                     if box:
                         word.offset(box[0:2])
 
-            self.log.debug("Detected words: %s", "\n".join(" ".join(iword.word if iword else "" for iword in line) for line in words))
+            self.log.info("Detected words: %s", "\n".join(" ".join(iword.word if iword else "" for iword in line) for line in words))
             deferred.callback(words)
 
         cmd = ["/usr/bin/tesseract", img_file_path, out_file_path, "-l", self.config.lang, "hocr"]
