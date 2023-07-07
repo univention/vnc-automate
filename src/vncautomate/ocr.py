@@ -438,14 +438,18 @@ class OCRAlgorithm(object):
             )
             yield (final_score, words)
 
-    def find_text_in_image(self, img, *patterns):
-        # type: (Image, *str) -> Deferred
+    def _dump_screen(self, img):
+        # type: (Image) -> None
         if self.config.dump_dir:
             img_path = os.path.join(self.config.dump_dir, "vnc_automate_%s.png" % datetime.now().isoformat())
             img.save(img_path)
 
         if self.config.dump_screen:
             img.save(self.config.dump_screen)
+
+    def find_text_in_image(self, img, *patterns):
+        # type: (Image, *str) -> Deferred
+        self._dump_screen(img)
 
         # convert image to gray scale
         img = img.convert("L")
