@@ -3,7 +3,7 @@
 # Python VNC automate package
 #  rules file for generating the deb package
 #
-# Copyright 2016-2022 Univention GmbH
+# Copyright 2016-2023 Univention GmbH
 #
 # https://www.univention.de/
 #
@@ -36,7 +36,7 @@ export PYBUILD_BEFORE_TEST := [ -d build/extra/vncdotool ] || http_proxy= https_
 export PYBUILD_BEFORE_TEST_python3 := [ -d build/extra/vncdotool ] || http_proxy= https_proxy= pip3 install -t build/extra --no-deps vncdotool
 
 %:
-	dh $@ --with python2,python3 --buildsystem=pybuild
+	dh $@ --with python3 --buildsystem=pybuild
 
 override_dh_auto_test:
 	PYTHONPATH=$$PWD/build/extra dh_auto_test

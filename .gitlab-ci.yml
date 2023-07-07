@@ -9,10 +9,9 @@ variables:
   LANG: "C.UTF-8"
   DEBIAN_FRONTEND: noninteractive
   CI_REGISTRY: docker-registry.knut.univention.de
-  IMAGE_DEV: $CI_REGISTRY/ucs-ec2-tools
 
 tox:
-  image: $CI_REGISTRY/phahn/ucs-devbase:449
+  image: $CI_REGISTRY/phahn/ucs-devbase:504
   cache:
     paths:
       - .tox
@@ -33,7 +32,7 @@ tox:
 
 debian:
   interruptible: true
-  image: $IMAGE_DEV
+  image: $CI_REGISTRY/ucs-ec2-tools
   before_script:
     - mkdir -p /var/log/apt
     - apt-get -qq update

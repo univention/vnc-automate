@@ -1,5 +1,4 @@
 # distutils: language = c++
-# -*- coding: utf-8 -*-
 #cython: language_level=3
 #
 # Python VNC automate
