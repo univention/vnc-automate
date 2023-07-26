@@ -141,13 +141,16 @@ class VNCAutomateClient(VNCDoToolClient):
         deferred.addCallback(lambda pos: self.mouseMove(*pos))
         deferred.addCallback(lambda _client: deferLater(reactor, 0.1, self.mousePress, 1))
         deferred.addCallback(lambda _client: deferLater(reactor, 0.1, self.mouseMove, 0, 0))
+        deferred.addBoth(lambda _: self)  # clear VNCAutomateException and prepare next vncdotool.client.deferred
         return deferred
 
-    def waitForText(self, text, timeout=30, wait=True):
-        # type: (str, int, bool) -> Deferred
+    def waitForText(self, text, timeout=30, wait=True, result=None):
+        # type: (str, int, bool, Optional[List[Tuple[int, int]]]) -> Deferred
         self.log.info('waitForText("%s", timeout=%.1f)', text, timeout)
         deferred = self._find_text(text, timeout=timeout, wait=wait)
-        deferred.addCallback(lambda _pos: self)  # make sure to return self
+        if result is not None:
+            deferred.addCallback(lambda pos: result.append(pos))
+        deferred.addBoth(lambda _: self)  # clear VNCAutomateException and prepare next vncdotool.client.deferred
         return deferred
 
     def enterKeys(self, keys, log=True):
