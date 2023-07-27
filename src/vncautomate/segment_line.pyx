@@ -57,7 +57,7 @@ cdef void line_from_pixels(vector[FLOAT_t] &_line_pixels, FLOAT_t line_segment_m
         return
 
     line_pixels = np.array(_line_pixels, dtype=FLOAT)
-    line_pixels = line_pixels.reshape((_line_pixels.size() / 2, 2))
+    line_pixels = line_pixels.reshape((_line_pixels.size() // 2, 2))
     cdef np.ndarray[FLOAT_t, ndim=1] mean = line_pixels.mean(0)
     cdef np.ndarray[FLOAT_t, ndim=1] line_min = line_pixels.min(0)
     cdef np.ndarray[FLOAT_t, ndim=1] line_max = line_pixels.max(0)
@@ -101,16 +101,16 @@ def find_lines(np.ndarray[FLOAT_t, ndim=2] edges not None, np.ndarray[INT_t, ndi
     for y in range(edges.shape[0]):
         for x in range(edges.shape[1]):
             if edges[y, x] > config.line_segment_high_threshold and line_segments[y, x] < 0:
-                segment_line(x, y, _lines.size() / 4, edges, line_segments, config.line_segment_low_threshold, pixel_stack, line_pixels)
+                segment_line(x, y, _lines.size() // 4, edges, line_segments, config.line_segment_low_threshold, pixel_stack, line_pixels)
                 line_from_pixels(line_pixels, config.line_segment_min_covariance, config.line_min_length, line)
 
                 for i in range(4):
                     _lines.push_back(line[i])
 
-    log.debug('%s lines have been segmented in total', len(_lines) / 4)
+    log.debug('%s lines have been segmented in total', len(_lines) // 4)
 
     # convert lines to 2d structure
     lines = np.array(_lines)
-    lines = lines.reshape((_lines.size() / 4, 4))
+    lines = lines.reshape((_lines.size() // 4, 4))
 
     return lines
