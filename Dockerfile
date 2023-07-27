@@ -1,9 +1,9 @@
-FROM docker-registry.knut.univention.de/ucs-ec2-tools
+FROM gitregistry.knut.univention.de/univention/dist/ucs-ec2-tools
 ENV LANG C.UTF-8
 COPY ["python3-vnc-automate_*.deb", "/"]
 RUN apt-get -qq update \
     && mkdir -p /var/log/apt/ \
-    && apt-get -q --assume-yes -f install /python3-vnc-automate_*.deb vncsnapshot \
+    && apt-get -q --assume-yes install /python3-vnc-automate_*.deb \
     && apt-get -q --assume-yes install --no-install-recommends \
         python3-pil \
         python3-pip \
@@ -13,7 +13,7 @@ RUN apt-get -qq update \
         python3-twisted \
         python3-wheel \
         python3-yaml \
-    && pip3 install vncdotool==1.2.0 \
+    && pip3 install --no-cache-dir --break-system-packages vncdotool==1.2.0 \
     && rm -rf \
         /usr/share/doc \
         /usr/share/info \
