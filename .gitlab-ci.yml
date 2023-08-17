@@ -1,17 +1,37 @@
 include:
   - template: 'Workflows/MergeRequest-Pipelines.gitlab-ci.yml'
   - project: univention/dist/docker-services
-    file: kaniko.yml
+    file:
+      - kaniko.yml
+      - pre-commit.yml
 
 variables:
   LANG: "C.UTF-8"
   DEBIAN_FRONTEND: noninteractive
-  CI_REGISTRY: docker-registry.knut.univention.de
-  IMAGE_DEV: $CI_REGISTRY/ucs-ec2-tools
+
+tox:
+  image: docker-registry.knut.univention.de/phahn/ucs-devbase:504
+  cache:
+    paths:
+      - .tox
+  before_script:
+    - apt-get -q --assume-yes build-dep .
+    - apt-get -q --assume-yes install tox
+  script:
+    - tox
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+      junit: pytest.xml
+    paths:
+      - public/
+    expire_in: 1 day
 
 debian:
   interruptible: true
-  image: $IMAGE_DEV
+  image: gitregistry.knut.univention.de/univention/dist/ucs-ec2-tools
   before_script:
     - mkdir -p /var/log/apt
     - apt-get -qq update
@@ -27,11 +47,11 @@ debian:
 
 docker:
   interruptible: true
-  extends: .kaniko_knut
+  extends: .kaniko
   needs:
     - job: debian
   before_script:
     - cp Dockerfile artifacts/
   variables:
     KANIKO_BUILD_CONTEXT: artifacts
-    CI_REGISTRY_IMAGE: $CI_REGISTRY/ucs-vnc-tools
+    KANIKO_ARGS: --cache=true --cache-repo=$CI_REGISTRY_IMAGE/cache

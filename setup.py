@@ -1,14 +1,16 @@
-from setuptools import setup
-from Cython.Build import cythonize
+#!/usr/bin/python3
+# SPDX-FileCopyrightText: 2016-2023 Univention GmbH
+# SPDX-License-Identifier: AGPL-3.0-only
 
-with open("debian/changelog", "r") as fh:
-	line = fh.readline()
-	name, _ver, _tail = line.split(" ", 2)
-	version = _ver.strip("()").replace("-", ".")
+from setuptools import Extension, setup
 
 setup(
-	name=name,
-	version=version,
-	ext_modules=cythonize('vncautomate/segment_line.pyx'),
-	test_suite='tests',
+    ext_modules=[
+        Extension(
+            "vncautomate.segment_line",
+            sources=["src/vncautomate/segment_line.pyx"],
+            language="c++",
+        ),
+    ],
+    test_suite="tests",
 )

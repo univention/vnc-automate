@@ -2,60 +2,44 @@ Source: vnc-automate
 Section: univention
 Priority: optional
 Maintainer: Univention GmbH <packages@univention.de>
-Build-Depends: debhelper,
- python2.7-dev,
- python3-dev,
+Build-Depends:
+ cmake,
+ cython3 (>= 0.23.2),
+ debhelper (>= 10),
  dh-python,
- python-all,
- python3-all,
- python-setuptools,
- python3-setuptools,
- cython,
- cython3,
- python-numpy,
-Standards-Version: 3.7.2
-XS-Python-Version: 2.7
-
-Package: python-vnc-automate
-Architecture: all
-Provides: ${python:Provides},
-Depends: ${python:Depends},
- ${misc:Depends},
- python-pil,
- python-scipy,
- python-twisted-core,
- tesseract-ocr,
- tesseract-ocr-deu,
- tesseract-ocr-fra,
- tesseract-ocr-osd,
- python-lxml
-Description: A python framework for automating VNC sessions via text recognition (OCR)
- This package provides a python framework that allows to search in a VNC
- session for given strings upon which mouse click actions can be triggered. In
- order to recognize strings on the screen, the framework employs the OCR
- (optical character recognition) tool tesseract. For better text recognition on
- buttons, an additional algorithm detects rectangular regions in the screen and
- executes tesseract in this regions separately. By doing so, GUI tests may be
- written in python to automate VNC sessions.
-
-Package: python3-vnc-automate
-Architecture: all
-Provides: ${python:Provides},
-Depends: ${python3:Depends},
- ${misc:Depends},
+ python3-all-dev,
+ python3-debian,
+ python3-lxml,
+ python3-numpy,
  python3-pil,
+ python3-pip,
+ python3-pycryptodome,
+ python3-pytest,
+ python3-pytest-cov,
  python3-scipy,
+ python3-setuptools,
  python3-twisted,
  tesseract-ocr,
+Standards-Version: 3.7.2
+Rules-Requires-Root: no
+
+Package: python3-vnc-automate
+Architecture: any
+Depends:
+ tesseract-ocr,
+ ${misc:Depends},
+ ${python3:Depends},
+ ${shlibs:Depends},
+Recommends:
+ python3-lxml,
  tesseract-ocr-deu,
  tesseract-ocr-fra,
  tesseract-ocr-osd,
- python3-lxml
-Description: A python framework for automating VNC sessions via text recognition (OCR)
+Description: A Python framework for automating VNC sessions via text recognition (OCR)
  This package provides a python framework that allows to search in a VNC
  session for given strings upon which mouse click actions can be triggered. In
  order to recognize strings on the screen, the framework employs the OCR
  (optical character recognition) tool tesseract. For better text recognition on
  buttons, an additional algorithm detects rectangular regions in the screen and
  executes tesseract in this regions separately. By doing so, GUI tests may be
- written in python to automate VNC sessions.
+ written in Python to automate VNC sessions.
