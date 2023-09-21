@@ -176,3 +176,4 @@ class VNCAutomateClient(VNCDoToolClient):
 
 class VNCAutomateFactory(VNCDoToolFactory):
     protocol = VNCAutomateClient
+    force_caps = True
