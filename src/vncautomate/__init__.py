@@ -38,7 +38,7 @@ def init_logger(debug_level="info"):
         sys.exit("Unknown log level %r" % (debug_level,))
 
     logging.basicConfig(
-        format="%(asctime)s %(levelname)s [%(name)s:%(module)s:%(funcName)s]: %(message)s",
+        format="%(asctime)s %(levelname)s [%(name)s:%(funcName)s]: %(message)s",
         level=level,
     )
 
